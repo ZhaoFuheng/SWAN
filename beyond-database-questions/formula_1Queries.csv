@@ -132,11 +132,16 @@ formula_1,How old is the youngest 8 Japanese driver? What are their names?,"youn
     WHERE T2.nationality = 'Japanese' 
     ORDER BY T2.dob 
     DESC LIMIT 8"
-formula_1,List circuits which host 4 f1 races from year 1990 to 2000.,from year 1990 to 2000 refers to year(date) between 1990 and 2000;,"SELECT DISTINCT T1.name FROM circuits AS T1 INNER JOIN races AS T2 ON T2.circuitID = T1.circuitId WHERE STRFTIME('%Y', T2.date) BETWEEN '1990' AND '2000' GROUP BY T1.name HAVING COUNT(T2.raceId) = 4",moderate,"
-SELECT DISTINCT T1.name 
+formula_1,List circuits which host 4 f1 races from year June 1990 to June 2000.,from year 1990 to 2000 refers to year(date) between 1990 and 2000;,"SELECT DISTINCT T1.name 
+FROM circuits AS T1 
+INNER JOIN races AS T2 
+ON T2.circuitID = T1.circuitID 
+WHERE STRFTIME('%Y-%m', T2.date) BETWEEN '1990-06' AND '2000-06' 
+GROUP BY T1.name 
+HAVING COUNT(T2.raceId) = 4;",moderate,"SELECT DISTINCT T1.name 
     FROM circuits AS T1 INNER JOIN races AS T2 ON T2.circuitID = T1.circuitId 
     INNER JOIN llm_races AS T3 ON T2.name = T3.name AND T2.year = T3.year
-    WHERE STRFTIME('%Y', T3.date) BETWEEN '1990' AND '2000' 
+    WHERE STRFTIME('%Y-%m', T2.date) BETWEEN '1990-06' AND '2000-06' 
     GROUP BY T1.name HAVING COUNT(T2.raceId) = 4"
 formula_1,List circuits in USA which hosted f1 races in 2006. State the name and location of circuit and the name of the race it hosted.,,"SELECT T1.name, T1.location, T2.name FROM circuits AS T1 INNER JOIN races AS T2 ON T2.circuitID = T1.circuitId WHERE T1.country = 'USA' AND T2.year = 2006",simple,"SELECT T1.name, T1.location, T2.name 
     FROM circuits AS T1 INNER JOIN races AS T2 ON T2.circuitID = T1.circuitId 
