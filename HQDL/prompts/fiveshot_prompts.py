@@ -45,10 +45,10 @@ Example Entry:'39500 Dunlap Road','Dunlap Leadership Academy',?,?,?,?,?
 Example Answer:'39500 Dunlap Road','Dunlap Leadership Academy','Dunlap','Fresno',0,'www.kcusd.com','Y'
 
 Example Entry:'5328 Brann Street','Urban Montessori Charter',?,?,?,?,?
-Example Answer:'5328 Brann Street','Urban Montessori Charter','Oakland',0,'www.urbanmontessori.org','N','Alameda'
+Example Answer:'5328 Brann Street','Urban Montessori Charter','Oakland' 'Alameda', 0,'www.urbanmontessori.org','N'
 
 Example Entry:'755 Oak Grove Road','Ygnacio Valley High',?,?,?,?,?
-Example Answer:'755 Oak Grove Road','Ygnacio Valley High','Concord',1,'www.mdusd.org','N','Contra Costa'
+Example Answer:'755 Oak Grove Road','Ygnacio Valley High','Concord','Contra Costa', 1,'www.mdusd.org','N'
 
 Target Entry:'{street_name}','{school_name}',?,?,?,?,?
 Answer:
@@ -92,7 +92,7 @@ Example Answer:'Abe Sapien','Abraham Sapien','Blue','No Colour','Blue','Dark Hor
 Example Entry:'Abomination','Emil Blonsky',?,?,?,?,?,?,?,?
 Example Answer:'Abomination','Emil Blonsky','Green','No Colour','No Colour','Marvel Comics','Human / Radiation','Male','Bad','Accelerated Healing,Intelligence,Super Strength,Stamina,Super Speed,Invulnerability,Animation,Super Breath'
 
-Example Entry:'Lucifer Morningstar','-',?,?,?,?,?,?,?,?
+Example Entry:'Abin Sur','-',?,?,?,?,?,?,?,?
 Example Answer:'Abin Sur','-','Blue','No Colour','Red','DC Comics','Ungaran','Male','Good','Lantern Power Ring'
 
 Target Entry:'{superhero_name}','{full_name}',?,?,?,?,?,?,?,?
