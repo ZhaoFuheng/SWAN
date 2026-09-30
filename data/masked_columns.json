@@ -1,0 +1,89 @@
+{
+  "california_schools": {
+    "frpm": [
+      "County Name",
+      "County Code",
+      "Educational Option Type",
+      "Charter School (Y/N)",
+      "Charter School Number",
+      "Charter Funding Type"
+    ],
+    "satscores": [
+      "cname"
+    ],
+    "schools": [
+      "County",
+      "City",
+      "MailCity",
+      "Magnet",
+      "Website"
+    ]
+  },
+  "superhero": {
+    "alignment": [
+      "id",
+      "alignment"
+    ],
+    "superhero": [
+      "gender_id",
+      "eye_colour_id",
+      "hair_colour_id",
+      "skin_colour_id",
+      "race_id",
+      "publisher_id",
+      "alignment_id"
+    ],
+    "hero_power": [
+      "hero_id",
+      "power_id"
+    ]
+  },
+  "formula_1": {
+    "circuits": [
+      "country",
+      "url",
+      "lat",
+      "lng"
+    ],
+    "constructors": [
+      "nationality",
+      "url"
+    ],
+    "drivers": [
+      "nationality",
+      "dob",
+      "url",
+      "code"
+    ],
+    "races": [
+      "date",
+      "url"
+    ]
+  },
+  "european_football_2": {
+    "League": [
+      "country_id",
+      "name"
+    ],
+    "Country": [
+      "name"
+    ],
+    "Match": [
+      "league_id",
+      "country_id",
+      "home_team_goal",
+      "away_team_goal",
+      "goal"
+    ],
+    "Team": [
+      "team_short_name"
+    ],
+    "Player": [
+      "birthday",
+      "height"
+    ],
+    "Player_Attributes": [
+      "preferred_foot"
+    ]
+  }
+}

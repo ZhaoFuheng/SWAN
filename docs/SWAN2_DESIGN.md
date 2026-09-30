@@ -1,0 +1,102 @@
+# SWAN 2.0 design
+
+SWAN asks questions whose answers depend on values that were removed from a database, so a system must
+recover them with an LLM and combine them with SQL. SWAN 1.x measured whether a system gets the answer
+right. SWAN 2.0 also measures how well a system **plans** its LLM calls: a better engine should reach the same
+quality with fewer calls, at lower cost, and sooner.
+
+## Principles
+
+1. **One query per question, planned by the engine.** Each question has a single query in AISQL, DuckDB SQL
+   with AI functions, written the way a user would write it: conditions in the order the question states
+   them, no hand deduplication, no hand reordering. Every system runs that query, so any difference in
+   calls comes from the system's own planning.
+2. **Same answer, different cost.** Each question has one gold answer. Skipping work may not change the
+   answer, so a system can only win by being cheaper at equal quality.
+3. **Room to plan.** Questions and data are shaped so that a planner has real choices to make: which filter
+   to run first, how far a LIMIT reaches, which values repeat.
+
+## How each system runs a question
+
+| system | what it runs |
+|---|---|
+| SWAN-AISQL | the AISQL query, as written; its optimizer plans the LLM calls, ordering filters with a selectivity model fed by an embedding server |
+| BlendSQL | an automatic translation of the query into BlendSQL (LLM ingredients in sqlite); BlendSQL plans it |
+| LOTUS | an automatic translation into the LOTUS program that follows the query's written order, with semantic operators over DataFrames; LOTUS has no planner, so the program is its plan |
+
+The translations are part of the benchmark, so no query author shapes a system's plan. Two checks keep them
+honest. A linter requires every AI call to have one fixed prompt form: a question, the name of one context
+column, and that column. A **shadow model**, a deterministic stand-in for the LLM that answers the same
+(question, value) pair the same way whatever the system's prompt format, runs all three systems on every
+question: their results must be identical.
+
+## Data
+
+The databases are the four BIRD dev databases (`california_schools`, `superhero`, `formula_1`,
+`european_football_2`), rebuilt with a fixed seed:
+
+- **Scale.** Large tables that the questions read are sampled down to a target size. Rows that depend on a
+  dropped row are dropped with it, so every reference still resolves.
+- **Duplication.** Each entity whose values go into prompts (a school, hero, driver, team, player, match)
+  gets a random number of identical copies with new ids, `1 + Poisson(mean - 1)`, so a mean of 2 and some
+  entities repeated many times. Identical entities produce identical prompts: an engine that evaluates each
+  distinct prompt once pays for it once.
+- **Masking.** The hidden columns are removed from a copy of each database. Systems see only that copy;
+  gold answers come from the full one.
+
+## Questions
+
+There are 30 questions per database. Each keeps the kind of hidden value its SWAN 1.x question needed and
+has one of ten shapes:
+
+| shape | per database | what a good engine exploits |
+|---|---|---|
+| `plain` | 6 | nothing special |
+| `any_k` | 3 | "list any k": stop after k passing rows |
+| `top_n` | 3 | ORDER BY a plain column, LIMIT k, AI output in SELECT: call the LLM only for the k rows kept |
+| `multi_filter` | 5 | 3 to 4 AI filters, some written least selective first: order them, and run later ones only on survivors |
+| `boolean` | 2 | AI filters under AND/OR: stop once a branch decides the row |
+| `cheap_after` | 3 | a cheap, selective plain filter written after an AI filter: run it first |
+| `join_fanout` | 3 | an AI call on a dimension's attribute seen through many fact rows: one call per distinct value |
+| `cte_reuse` | 2 | a CTE with AI calls read twice: evaluate once |
+| `case` | 2 | an AI call under `CASE WHEN <plain condition>`: only rows that reach the branch |
+| `distinct_exists` | 1 | DISTINCT or EXISTS over an AI-filtered join: stop at the first match |
+
+Each question also has an **oracle query**: the AISQL query with every AI call replaced by the true hidden
+value. It must return the gold answer, which shows the AISQL query is right whenever the model is right.
+
+## Scoring and measurement
+
+- **Quality** per question, following SemBench: `1 - relative error` (floored at 0) for a single-number
+  answer; for "any k" questions, precision over the rows returned with recall against at most k valid rows;
+  otherwise set F1 of the rows against the gold rows. The headline is the mean over questions. Exact match
+  is reported as well.
+- **Calls, tokens, cost and latency** are counted the same way for every system by a local meter between
+  the system and the model endpoint. Every system gets the same model and the same number of requests in
+  flight, and questions run one at a time.
+- **Recording and replay.** Runs go through the SWAN-AISQL cache proxy, which records each answer with its
+  cost and latency. Replaying a run costs nothing and reproduces its answers, cost and latency, so the
+  systems can be compared side by side and rescored later.
+
+## Knobs
+
+| knob | where | default | what it controls |
+|---|---|---|---|
+| `seed` | `data/swan2.json` | 2026 | every random choice in the database build |
+| `target_rows` | `data/swan2.json` | 10,000 | the size large tables are sampled down to |
+| `mean_copies` | `data/swan2.json` | 2 | the mean number of copies of each prompt entity |
+| sample and duplicate rules | `data/swan2.json` | per database | which tables are sampled, which are duplicated, and which dependent rows follow a copy |
+| masked columns | `data/masked_columns.json` | per database | the hidden columns |
+| `--model` | `swan-bench run` | `gpt-5.6-luna` | the chat model, for every system |
+| `--endpoint` | `swan-bench run`, `SWAN_BENCH_ENDPOINT` | `http://localhost:4001` | the OpenAI-compatible endpoint: the SWAN-AISQL cache proxy (records and replays), or litellm alone at `:4000` |
+| `--concurrency` | `swan-bench run` | 20 | LLM requests in flight, for every system |
+| `--budget` | `swan-bench run` | none | stop once the cache proxy has spent this many USD on new calls |
+| `--set NAME=VALUE` | `swan-bench run` | none | a SWAN-AISQL setting before each query (e.g. `ai_pullup=false`) |
+| `--duckdb-bin` | `swan-bench run`, `SWAN_AISQL_DUCKDB` | none | the SWAN-AISQL binary |
+| `SWAN_AISQL_DIR` | `scripts/run_*.sh` | `../SWAN-AISQL` | where the scripts find or clone SWAN-AISQL (binary, serving stack, embedding server) |
+| `--db`, `--qid` | `swan-bench run`, `check`, `lint` | all | restrict to databases or questions |
+| `--stub` | `swan-bench run` | off | answer with a local stub instead of a model, to test the setup for free |
+
+After changing `data/swan2.json`, rebuild with `swan-bench prepare --force`. Gold answers are always computed
+on the rebuilt data; run `pytest tests/test_oracle.py` to confirm every question still has a non-empty
+answer that its oracle query reproduces.

@@ -1,0 +1,85 @@
+{
+  "system": "aisql",
+  "model": "gpt-5.6-luna",
+  "endpoint": "http://localhost:4021",
+  "options": {
+    "concurrency": 20,
+    "duckdb_bin": "/Users/owner/Desktop/research/swan-ai-sql/SWAN-AISQL/build/reldebug/duckdb",
+    "mock": false,
+    "settings": {
+      "ai_concurrency": 20
+    }
+  },
+  "databases": {
+    "california_schools": {
+      "correct": 6,
+      "total": 30,
+      "failed": 0,
+      "accuracy": 0.2,
+      "requests": 34821,
+      "fresh_calls": 63913,
+      "errors": 0,
+      "prompt_tokens": 3106505,
+      "completion_tokens": 3426055,
+      "reasoning_tokens": 2895062,
+      "cost_usd": 4.732567,
+      "seconds": 3371.35
+    },
+    "superhero": {
+      "correct": 5,
+      "total": 30,
+      "failed": 0,
+      "accuracy": 0.1667,
+      "requests": 17372,
+      "fresh_calls": 34352,
+      "errors": 304,
+      "prompt_tokens": 2351522,
+      "completion_tokens": 808899,
+      "reasoning_tokens": 555085,
+      "cost_usd": 1.440983,
+      "seconds": 1464.66
+    },
+    "formula_1": {
+      "correct": 16,
+      "total": 30,
+      "failed": 0,
+      "accuracy": 0.5333,
+      "requests": 4007,
+      "fresh_calls": 8513,
+      "errors": 0,
+      "prompt_tokens": 250021,
+      "completion_tokens": 213802,
+      "reasoning_tokens": 165765,
+      "cost_usd": 0.306567,
+      "seconds": 334.21
+    },
+    "european_football_2": {
+      "correct": 5,
+      "total": 30,
+      "failed": 0,
+      "accuracy": 0.1667,
+      "requests": 325288,
+      "fresh_calls": 739201,
+      "errors": 0,
+      "prompt_tokens": 25836195,
+      "completion_tokens": 26349935,
+      "reasoning_tokens": 22370563,
+      "cost_usd": 36.787159,
+      "seconds": 29362.17
+    }
+  },
+  "overall": {
+    "correct": 32,
+    "total": 120,
+    "failed": 0,
+    "accuracy": 0.2667,
+    "requests": 381488,
+    "fresh_calls": 845979,
+    "errors": 304,
+    "prompt_tokens": 31544243,
+    "completion_tokens": 30798691,
+    "reasoning_tokens": 25986475,
+    "cost_usd": 43.267276,
+    "seconds": 34532.39
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "california_schools": {
+    "frpm": [
+      "School Name",
+      "District Name"
+    ],
+    "schools": [
+      "Street",
+      "School"
+    ]
+  },
+  "superhero": {
+    "superhero": [
+      "superhero_name",
+      "full_name"
+    ]
+  },
+  "formula_1": {
+    "circuits": [
+      "location",
+      "name"
+    ],
+    "constructors": [
+      "name"
+    ],
+    "drivers": [
+      "forename",
+      "surname"
+    ],
+    "races": [
+      "name",
+      "year"
+    ]
+  },
+  "european_football_2": {
+    "Match": [
+      "home_team_api_id",
+      "away_team_api_id"
+    ],
+    "League": [
+      "league_id"
+    ],
+    "Country": [
+      "country_id"
+    ],
+    "Team": [
+      "team_long_name"
+    ],
+    "Player": [
+      "player_name",
+      "weight"
+    ]
+  }
+}

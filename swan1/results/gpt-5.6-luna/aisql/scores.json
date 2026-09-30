@@ -1,0 +1,90 @@
+{
+  "system": "aisql",
+  "model": "gpt-5.6-luna",
+  "endpoint": "http://localhost:4021",
+  "options": {
+    "concurrency": 20,
+    "duckdb_bin": "/Users/owner/Desktop/research/swan-ai-sql/SWAN-AISQL/build/reldebug/duckdb",
+    "mock": false,
+    "settings": {
+      "ai_concurrency": 20
+    }
+  },
+  "databases": {
+    "california_schools": {
+      "correct": 6,
+      "total": 30,
+      "failed": 0,
+      "accuracy": 0.2,
+      "quality": 0.3517,
+      "requests": 34823,
+      "fresh_calls": 2,
+      "errors": 0,
+      "prompt_tokens": 3106678,
+      "completion_tokens": 3426196,
+      "reasoning_tokens": 2895173,
+      "cost_usd": 4.732771,
+      "seconds": 139.18
+    },
+    "superhero": {
+      "correct": 5,
+      "total": 30,
+      "failed": 0,
+      "accuracy": 0.1667,
+      "quality": 0.5809,
+      "requests": 17041,
+      "fresh_calls": 269,
+      "errors": 0,
+      "prompt_tokens": 2351797,
+      "completion_tokens": 802943,
+      "reasoning_tokens": 549790,
+      "cost_usd": 1.433891,
+      "seconds": 166.76
+    },
+    "formula_1": {
+      "correct": 16,
+      "total": 30,
+      "failed": 0,
+      "accuracy": 0.5333,
+      "quality": 0.6224,
+      "requests": 4007,
+      "fresh_calls": 1,
+      "errors": 0,
+      "prompt_tokens": 250021,
+      "completion_tokens": 213791,
+      "reasoning_tokens": 165755,
+      "cost_usd": 0.306554,
+      "seconds": 21.26
+    },
+    "european_football_2": {
+      "correct": 5,
+      "total": 30,
+      "failed": 0,
+      "accuracy": 0.1667,
+      "quality": 0.3751,
+      "requests": 325280,
+      "fresh_calls": 0,
+      "errors": 0,
+      "prompt_tokens": 25835541,
+      "completion_tokens": 26348950,
+      "reasoning_tokens": 22369698,
+      "cost_usd": 36.785846,
+      "seconds": 1331.44
+    }
+  },
+  "overall": {
+    "correct": 32,
+    "total": 120,
+    "failed": 0,
+    "accuracy": 0.2667,
+    "quality": 0.4825,
+    "requests": 381151,
+    "fresh_calls": 272,
+    "errors": 0,
+    "prompt_tokens": 31544037,
+    "completion_tokens": 30791880,
+    "reasoning_tokens": 25980416,
+    "cost_usd": 43.259062,
+    "seconds": 1658.64
+  }
+}

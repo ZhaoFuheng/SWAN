@@ -1,0 +1,86 @@
+{
+  "system": "blendsql",
+  "model": "gpt-5.6-luna",
+  "endpoint": "http://localhost:4021",
+  "options": {
+    "concurrency": 20,
+    "shots": 0
+  },
+  "databases": {
+    "california_schools": {
+      "correct": 6,
+      "total": 30,
+      "failed": 0,
+      "accuracy": 0.2,
+      "quality": 0.3379,
+      "requests": 39483,
+      "fresh_calls": 0,
+      "errors": 0,
+      "prompt_tokens": 4664859,
+      "completion_tokens": 3574033,
+      "reasoning_tokens": 3187328,
+      "cost_usd": 5.22181,
+      "seconds": 295.06
+    },
+    "superhero": {
+      "correct": 6,
+      "total": 30,
+      "failed": 0,
+      "accuracy": 0.2,
+      "quality": 0.6304,
+      "requests": 17648,
+      "fresh_calls": 0,
+      "errors": 0,
+      "prompt_tokens": 3292606,
+      "completion_tokens": 1120210,
+      "reasoning_tokens": 920983,
+      "cost_usd": 2.002773,
+      "seconds": 118.04
+    },
+    "formula_1": {
+      "correct": 12,
+      "total": 30,
+      "failed": 1,
+      "accuracy": 0.4,
+      "quality": 0.5171,
+      "requests": 3033,
+      "fresh_calls": 27,
+      "errors": 0,
+      "prompt_tokens": 316532,
+      "completion_tokens": 136814,
+      "reasoning_tokens": 99258,
+      "cost_usd": 0.227483,
+      "seconds": 23.65
+    },
+    "european_football_2": {
+      "correct": 7,
+      "total": 30,
+      "failed": 0,
+      "accuracy": 0.2333,
+      "quality": 0.398,
+      "requests": 333084,
+      "fresh_calls": 0,
+      "errors": 0,
+      "prompt_tokens": 40583774,
+      "completion_tokens": 25131067,
+      "reasoning_tokens": 21527331,
+      "cost_usd": 38.274038,
+      "seconds": 3814.94
+    }
+  },
+  "overall": {
+    "correct": 31,
+    "total": 120,
+    "failed": 1,
+    "accuracy": 0.2583,
+    "quality": 0.4708,
+    "requests": 393248,
+    "fresh_calls": 27,
+    "errors": 0,
+    "prompt_tokens": 48857771,
+    "completion_tokens": 29962124,
+    "reasoning_tokens": 25734900,
+    "cost_usd": 45.726104,
+    "seconds": 4251.69
+  }
+}

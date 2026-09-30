@@ -1,0 +1,22 @@
+WITH m AS (
+    SELECT "Match".id, "Match".season, "Match".stage, SUBSTR("Match".date, 1, 10) AS match_day,
+           home.team_long_name AS home_team, away.team_long_name AS away_team,
+           'Home team: ' || home.team_long_name || ', Away team: ' || away.team_long_name
+               || ', Date: ' || SUBSTR("Match".date, 1, 10) AS match_key,
+           lg.name AS league_name, ct.name AS country_name,
+           "Match".home_team_goal, "Match".away_team_goal
+    FROM "Match"
+    INNER JOIN Team AS home ON "Match".home_team_api_id = home.team_api_id
+    INNER JOIN Team AS away ON "Match".away_team_api_id = away.team_api_id
+    INNER JOIN League AS lg ON "Match".league_id = lg.id
+    INNER JOIN Country AS ct ON "Match".country_id = ct.id
+    WHERE "Match".season = '2009/2010' AND "Match".date >= '2010-01-01'
+)
+SELECT m.away_team
+FROM m
+WHERE m.away_team_goal > m.home_team_goal
+  AND m.league_name = 'Scotland Premier League'
+  AND m.away_team_goal >= 2
+GROUP BY m.away_team
+ORDER BY COUNT(*) DESC, m.away_team
+LIMIT 1

@@ -1,0 +1,19 @@
+WITH temp AS (
+    SELECT t1.team_long_name,
+           'Team Long Name: ' || t1.team_long_name AS team_key
+    FROM Team AS t1
+    INNER JOIN Team_attributes AS t2 ON t1.team_api_id = t2.team_api_id
+    WHERE t2.chanceCreationPassingClass = 'Risky'
+),
+temp2 AS (
+    SELECT temp.team_long_name,
+           {{
+               LLMMap(
+                   'Provide the team short name (3 letters code).',
+                   'temp::team_key'
+               )
+           }} AS team_short_name
+    FROM temp
+)
+SELECT DISTINCT temp2.team_short_name
+FROM temp2

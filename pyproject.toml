@@ -1,0 +1,44 @@
+[project]
+name = "swan-bench"
+version = "2.0.0"
+description = "SWAN: beyond-database questions over BIRD databases with masked columns, and its BlendSQL, LOTUS and SWAN-AISQL baselines"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+# The core (data preparation, the AISQL language, scoring) needs only sqlglot.
+dependencies = ["sqlglot>=30"]
+
+[project.optional-dependencies]
+blendsql = ["blendsql>=0.1.27"]
+lotus = [
+    "lotus-ai>=1.2.4",
+    "pandas",
+    # lotus-ai pulls in sentence-transformers -> torch; the last torch with Intel-mac wheels is 2.2,
+    # which needs numpy < 2
+    "torch<2.3; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "numpy<2; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    # faiss-cpu 1.13+ ships Intel-mac wheels only for macOS 15
+    "faiss-cpu<1.13; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+]
+
+[project.scripts]
+swan-bench = "swan_bench.cli:main"
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[build-system]
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/swan_bench"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "slow: every LOTUS and SWAN-AISQL query against a stub model (minutes; needs `swan-bench prepare`)",
+    "blendsql: needs the blendsql extra",
+]
+addopts = "-m 'not slow'"

@@ -1,0 +1,59 @@
+{
+  "seed": 2026,
+  "target_rows": 10000,
+  "mean_copies": 2,
+  "databases": {
+    "california_schools": {
+      "sample": [],
+      "duplicate": [
+        {"table": "schools", "ids": ["CDSCode"],
+         "dependents": [{"table": "frpm", "fk": {"CDSCode": "CDSCode"}},
+                        {"table": "satscores", "fk": {"cds": "CDSCode"}}]}
+      ]
+    },
+    "superhero": {
+      "sample": [],
+      "duplicate": [
+        {"table": "superhero", "ids": ["id"],
+         "dependents": [{"table": "hero_power", "fk": {"hero_id": "id"}},
+                        {"table": "hero_attribute", "fk": {"hero_id": "id"}}]}
+      ]
+    },
+    "formula_1": {
+      "sample": [
+        {"table": "races", "key": "raceId", "size_by": "results",
+         "dependents": [{"table": "results", "fk": {"raceId": "raceId"}},
+                        {"table": "qualifying", "fk": {"raceId": "raceId"}},
+                        {"table": "constructorResults", "fk": {"raceId": "raceId"}},
+                        {"table": "constructorStandings", "fk": {"raceId": "raceId"}},
+                        {"table": "driverStandings", "fk": {"raceId": "raceId"}},
+                        {"table": "lapTimes", "fk": {"raceId": "raceId"}},
+                        {"table": "pitStops", "fk": {"raceId": "raceId"}}]}
+      ],
+      "duplicate": [
+        {"table": "drivers", "ids": ["driverId"],
+         "dependents": [{"table": "results", "fk": {"driverId": "driverId"}},
+                        {"table": "qualifying", "fk": {"driverId": "driverId"}},
+                        {"table": "driverStandings", "fk": {"driverId": "driverId"}}]},
+        {"table": "constructors", "ids": ["constructorId"], "dependents": []},
+        {"table": "circuits", "ids": ["circuitId"], "dependents": []},
+        {"table": "races", "ids": ["raceId"], "dependents": []}
+      ]
+    },
+    "european_football_2": {
+      "sample": [
+        {"table": "Match", "key": "id", "size_by": "Match", "dependents": []},
+        {"table": "Player_Attributes", "key": "id", "size_by": "Player_Attributes", "dependents": []}
+      ],
+      "duplicate": [
+        {"table": "Player", "ids": ["id", "player_api_id", "player_fifa_api_id"],
+         "dependents": [{"table": "Player_Attributes",
+                         "fk": {"player_api_id": "player_api_id", "player_fifa_api_id": "player_fifa_api_id"}}]},
+        {"table": "Team", "ids": ["id", "team_api_id", "team_fifa_api_id"],
+         "dependents": [{"table": "Team_Attributes",
+                         "fk": {"team_api_id": "team_api_id", "team_fifa_api_id": "team_fifa_api_id"}}]},
+        {"table": "Match", "ids": ["id", "match_api_id"], "dependents": []}
+      ]
+    }
+  }
+}

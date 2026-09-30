@@ -1,0 +1,2 @@
+# The 2024 BlendSQL 5-shot logs (1.5 GB) are stored in Git LFS.
+results/blendsql_2024/**/*.zip filter=lfs diff=lfs merge=lfs -text

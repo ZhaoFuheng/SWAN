@@ -1,0 +1,86 @@
+{
+  "system": "blendsql",
+  "model": "gpt-5.6-luna",
+  "endpoint": "http://localhost:4021",
+  "options": {
+    "concurrency": 20,
+    "shots": 0
+  },
+  "databases": {
+    "california_schools": {
+      "correct": 6,
+      "total": 30,
+      "failed": 0,
+      "accuracy": 0.2,
+      "quality": null,
+      "requests": 39483,
+      "fresh_calls": 51173,
+      "errors": 0,
+      "prompt_tokens": 4664859,
+      "completion_tokens": 3574033,
+      "reasoning_tokens": 3187328,
+      "cost_usd": 5.22181,
+      "seconds": 3475.31
+    },
+    "superhero": {
+      "correct": 6,
+      "total": 30,
+      "failed": 0,
+      "accuracy": 0.2,
+      "quality": null,
+      "requests": 17648,
+      "fresh_calls": 38118,
+      "errors": 0,
+      "prompt_tokens": 3292606,
+      "completion_tokens": 1120210,
+      "reasoning_tokens": 920983,
+      "cost_usd": 2.002773,
+      "seconds": 1450.5
+    },
+    "formula_1": {
+      "correct": 12,
+      "total": 30,
+      "failed": 1,
+      "accuracy": 0.4,
+      "quality": null,
+      "requests": 3007,
+      "fresh_calls": 6577,
+      "errors": 0,
+      "prompt_tokens": 313728,
+      "completion_tokens": 134581,
+      "reasoning_tokens": 97398,
+      "cost_usd": 0.224243,
+      "seconds": 242.44
+    },
+    "european_football_2": {
+      "correct": 7,
+      "total": 30,
+      "failed": 0,
+      "accuracy": 0.2333,
+      "quality": null,
+      "requests": 333113,
+      "fresh_calls": 751782,
+      "errors": 19,
+      "prompt_tokens": 40584608,
+      "completion_tokens": 25134791,
+      "reasoning_tokens": 21530937,
+      "cost_usd": 38.278674,
+      "seconds": 28899.6
+    }
+  },
+  "overall": {
+    "correct": 31,
+    "total": 120,
+    "failed": 1,
+    "accuracy": 0.2583,
+    "quality": null,
+    "requests": 393251,
+    "fresh_calls": 847650,
+    "errors": 19,
+    "prompt_tokens": 48855801,
+    "completion_tokens": 29963615,
+    "reasoning_tokens": 25736646,
+    "cost_usd": 45.7275,
+    "seconds": 34067.85
+  }
+}

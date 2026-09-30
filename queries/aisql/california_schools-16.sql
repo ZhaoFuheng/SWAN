@@ -1,0 +1,9 @@
+WITH f AS (
+    SELECT *, 'School: ' || "School Name" || '; District: ' || "District Name" AS school_district
+    FROM frpm
+)
+SELECT f."School Name", T2.AdmEmail1,
+    CASE WHEN f."Enrollment (K-12)" < 300
+         THEN ai_classify('Is this a charter school? school_district: ' || f.school_district, ['Yes', 'No']) END AS is_charter
+FROM f INNER JOIN schools AS T2 ON f.CDSCode = T2.CDSCode
+WHERE f."District Name" = 'Stockton Unified'

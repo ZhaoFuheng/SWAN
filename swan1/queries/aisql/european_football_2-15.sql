@@ -1,0 +1,11 @@
+WITH temp_cte AS (
+    SELECT T1.id,
+           T1.player_name,
+           T1.weight,
+           'Player Name: ' || T1.player_name || ', Weight: ' || T1.weight AS player_key
+    FROM Player AS T1
+    WHERE T1.weight < 130
+)
+SELECT COUNT(DISTINCT id)
+FROM temp_cte
+WHERE ai_filter('Is the player preferred foot left? player_key: ' || temp_cte.player_key)
