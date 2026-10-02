@@ -5,7 +5,11 @@ WITH race_data AS (
     SELECT race_data.circuitId AS circuitId, race_data.year AS year
     FROM race_data
     WHERE race_data.year BETWEEN 1990 AND 1999
-      AND ai_filter('Was this Formula 1 race held in June, July or August? race: ' || race_data.race)
+      AND ai_filter('Context:
+[race]: «' || race_data.race || '»
+
+
+Claim: Was this Formula 1 race held in June, July or August? race')
 )
 SELECT DISTINCT circuits.name
 FROM circuits

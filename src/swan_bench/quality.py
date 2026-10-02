@@ -21,7 +21,8 @@ A query that raises scores 0. The headline number is the mean quality over quest
 
 import re
 
-from .execution import _canonical_row, _canonical_value
+from .aisql import parse
+from .execution import _canonical_row, _canonical_value, results_match
 
 _LIMIT = re.compile(r"\bLIMIT\s+(\d+)\s*;?\s*$", re.I)
 
@@ -54,8 +55,6 @@ def any_k(system_sql: str | None) -> int | None:
     """k when the system query is LIMIT k without ORDER BY at its outermost level."""
     if not system_sql:
         return None
-    from .aisql import parse
-
     tree = parse(system_sql)
     limit = tree.args.get("limit")
     if limit is None or tree.args.get("order") is not None:
@@ -68,8 +67,6 @@ def any_k(system_sql: str | None) -> int | None:
 
 def exact_match(predicted: list, gold: list, gold_sql: str, system_sql: str | None = None) -> bool:
     """The 2024 exact match; for an any-k question, k (or all) rows that are all valid."""
-    from .execution import results_match
-
     k = any_k(system_sql)
     if k is None:
         return results_match(predicted, gold, ordered="ORDER BY" in gold_sql.upper())

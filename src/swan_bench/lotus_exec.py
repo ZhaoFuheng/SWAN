@@ -35,11 +35,25 @@ def _q(name: str) -> str:
 
 
 def _python(value):
-    if hasattr(value, "item"):
+    """A pandas/numpy value as a plain Python value, NaN/NA/NaT as None."""
+    if hasattr(value, "item"):  # numpy scalar
         value = value.item()
     if isinstance(value, float) and value != value:
         return None
+    if value is pd.NA or value is pd.NaT:
+        return None
     return value
+
+
+def rows_of(result) -> list[tuple]:
+    """A DataFrame, Series, list of rows or scalar as a list of plain row tuples."""
+    if hasattr(result, "itertuples"):
+        return [tuple(_python(v) for v in r) for r in result.itertuples(index=False, name=None)]
+    if hasattr(result, "tolist"):  # a Series
+        return [(_python(v),) for v in result.tolist()]
+    if isinstance(result, (list, tuple)):
+        return [tuple(_python(v) for v in (r if isinstance(r, (list, tuple)) else (r,))) for r in result]
+    return [(_python(result),)]
 
 
 def _has_ai(node: exp.Expression) -> bool:
@@ -137,7 +151,7 @@ class LotusExecutor:
         for sub in list(select.find_all(exp.Subquery)):
             if sub.parent is None or isinstance(sub.parent, (exp.From, exp.Join)) or not _has_ai(sub):
                 continue
-            if sub.find_ancestor(exp.Subquery) not in (None,) and sub.find_ancestor(exp.Subquery) is not sub:
+            if sub.find_ancestor(exp.Subquery) is not None:
                 continue  # nested inside another subquery: evaluated with it
             df = self._run(sub.this)
             values = [_python(v) for v in df.iloc[:, 0]] if len(df.columns) else []

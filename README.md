@@ -118,8 +118,8 @@ uv run swan-bench run --system lotus
 uv run swan-bench report
 ```
 
-- Each question prints its time, LLM calls, cost and whether the answer matched. `queries.jsonl` holds each
-  question's answer and counts, and `scores.json` the totals per database.
+- Each question prints its time, LLM calls, cost and quality. `queries.jsonl` holds each question's answer
+  and counts, and `scores.json` the totals per database.
 - An interrupted run resumes where it stopped. `--retry-errors` reruns the questions that failed, and
   `--rerun` starts over.
 - `--model` (default `gpt-5.6-luna`), `--endpoint`, `--concurrency` (default 20, for every system),
@@ -134,9 +134,16 @@ Each question gets a quality score from 0 to 1, following SemBench (`src/swan_be
   most k valid rows;
 - anything else: F1 of the returned rows against the gold rows.
 
-Rows match regardless of column order, and floats to 10 significant digits. A query that fails scores 0.
+Rows match regardless of column order, floats to 10 significant digits, and URLs without their scheme,
+`www.`, percent-encoding and trailing slash. A query that fails scores 0.
 The headline is the mean quality; exact match is reported too. `swan-bench rescore` recomputes both from a
 run's stored answers.
+
+## Results
+
+`results/gpt-5.6-luna/` holds the three systems' answers and scores on gpt-5.6-luna: mean quality 0.775 for
+SWAN-AISQL at 23,135 LLM calls, 0.741 for BlendSQL at 59,462 calls, and 0.770 for LOTUS at 69,478 calls.
+SWAN 1.x results are in `swan1/results/`.
 
 ## Data
 
@@ -164,11 +171,12 @@ Adding or editing a question: docs/SWAN2_AUTHORING.md.
 ## Repository layout
 
 ```
-scripts/                 run_swan_aisql.sh, run_blendsql.sh, run_lotus.sh (and the 2024 migration, for provenance)
+scripts/                 run_swan_aisql.sh, run_blendsql.sh, run_lotus.sh
 src/swan_bench/          the benchmark: database build, AISQL language, translators, meter, runner, scoring
 src/swan_bench/systems/  one adapter per system (SWAN-AISQL, BlendSQL, LOTUS)
 queries/                 the AISQL and oracle queries
-swan1/                   SWAN 1.x: its questions, per-system queries and results
+swan1/                   SWAN 1.x: its questions, per-system queries, results and the 2024 migration scripts
+results/gpt-5.6-luna/    SWAN 2.0 answers and scores for the three systems
 results/blendsql_2024/   the 2024 BlendSQL logs (5-shot logs in Git LFS)
 docs/                    SWAN2_DESIGN.md, SWAN2_AUTHORING.md, CHANGES.md
 ```

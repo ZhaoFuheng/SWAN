@@ -1,0 +1,90 @@
+{
+  "system": "aisql",
+  "model": "gpt-5.6-luna",
+  "endpoint": "http://localhost:4021",
+  "options": {
+    "concurrency": 20,
+    "duckdb_bin": "/Users/owner/Desktop/research/swan-ai-sql/SWAN-AISQL/build/relexp/duckdb",
+    "mock": false,
+    "settings": {
+      "ai_concurrency": 20
+    }
+  },
+  "databases": {
+    "california_schools": {
+      "correct": 11,
+      "total": 30,
+      "failed": 0,
+      "accuracy": 0.3667,
+      "quality": 0.7485,
+      "requests": 6065,
+      "fresh_calls": 8625,
+      "errors": 0,
+      "prompt_tokens": 713652,
+      "completion_tokens": 382192,
+      "reasoning_tokens": 166823,
+      "cost_usd": 0.601361,
+      "seconds": 407.53
+    },
+    "superhero": {
+      "correct": 6,
+      "total": 30,
+      "failed": 0,
+      "accuracy": 0.2,
+      "quality": 0.466,
+      "requests": 8467,
+      "fresh_calls": 12513,
+      "errors": 0,
+      "prompt_tokens": 840997,
+      "completion_tokens": 634022,
+      "reasoning_tokens": 338324,
+      "cost_usd": 0.929026,
+      "seconds": 599.27
+    },
+    "formula_1": {
+      "correct": 29,
+      "total": 30,
+      "failed": 0,
+      "accuracy": 0.9667,
+      "quality": 0.9952,
+      "requests": 2861,
+      "fresh_calls": 6534,
+      "errors": 0,
+      "prompt_tokens": 283861,
+      "completion_tokens": 161619,
+      "reasoning_tokens": 59773,
+      "cost_usd": 0.250718,
+      "seconds": 266.24
+    },
+    "european_football_2": {
+      "correct": 18,
+      "total": 30,
+      "failed": 0,
+      "accuracy": 0.6,
+      "quality": 0.8917,
+      "requests": 5742,
+      "fresh_calls": 9554,
+      "errors": 0,
+      "prompt_tokens": 634009,
+      "completion_tokens": 490868,
+      "reasoning_tokens": 283434,
+      "cost_usd": 0.71584,
+      "seconds": 403.16
+    }
+  },
+  "overall": {
+    "correct": 64,
+    "total": 120,
+    "failed": 0,
+    "accuracy": 0.5333,
+    "quality": 0.7754,
+    "requests": 23135,
+    "fresh_calls": 37226,
+    "errors": 0,
+    "prompt_tokens": 2472519,
+    "completion_tokens": 1668701,
+    "reasoning_tokens": 848354,
+    "cost_usd": 2.496945,
+    "seconds": 1676.2
+  }
+}

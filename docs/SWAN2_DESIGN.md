@@ -21,12 +21,13 @@ quality with fewer calls, at lower cost, and sooner.
 | system | what it runs |
 |---|---|
 | SWAN-AISQL | the AISQL query, as written; its optimizer plans the LLM calls, ordering filters with a selectivity model fed by an embedding server |
-| BlendSQL | an automatic translation of the query into BlendSQL (LLM ingredients in sqlite); BlendSQL plans it |
+| BlendSQL | an automatic translation of the query into BlendSQL (LLM ingredients in sqlite); BlendSQL plans it. Its `LLMMap` prompt is sent without BlendSQL's built-in one-shot example, so all three systems are zero-shot |
 | LOTUS | an automatic translation into the LOTUS program that follows the query's written order, with semantic operators over DataFrames; LOTUS has no planner, so the program is its plan |
 
 The translations are part of the benchmark, so no query author shapes a system's plan. Two checks keep them
-honest. A linter requires every AI call to have one fixed prompt form: a question, the name of one context
-column, and that column. A **shadow model**, a deterministic stand-in for the LLM that answers the same
+honest. A linter requires every AI call to have one fixed form built from a question and one context column;
+`ai_filter` spells out a claim layout (`Context: [<name>]: «<value>»`, then `Claim: <question> <name>`), from
+which the translators read the question and the column back. A **shadow model**, a deterministic stand-in for the LLM that answers the same
 (question, value) pair the same way whatever the system's prompt format, runs all three systems on every
 question: their results must be identical.
 
@@ -40,9 +41,10 @@ The databases are the four BIRD dev databases (`california_schools`, `superhero`
 - **Duplication.** Each entity whose values go into prompts (a school, hero, driver, team, player, match)
   gets a random number of identical copies with new ids, `1 + Poisson(mean - 1)`, so a mean of 2 and some
   entities repeated many times. Identical entities produce identical prompts: an engine that evaluates each
-  distinct prompt once pays for it once.
-- **Masking.** The hidden columns are removed from a copy of each database. Systems see only that copy;
-  gold answers come from the full one.
+  distinct prompt once pays for it once. Answers are about entities: every query counts and lists distinct
+  entities, so a copy changes the work, not the answer.
+- **Masking.** The hidden columns, and every other column that states the same fact outright, are removed
+  from a copy of each database. Systems see only that copy; gold answers come from the full one.
 
 ## Questions
 
@@ -69,8 +71,9 @@ value. It must return the gold answer, which shows the AISQL query is right when
 
 - **Quality** per question, following SemBench: `1 - relative error` (floored at 0) for a single-number
   answer; for "any k" questions, precision over the rows returned with recall against at most k valid rows;
-  otherwise set F1 of the rows against the gold rows. The headline is the mean over questions. Exact match
-  is reported as well.
+  otherwise set F1 of the rows against the gold rows. Values match regardless of column order, floats to 10
+  significant digits, and URLs without the scheme, `www.`, percent-encoding and trailing slash that a model
+  cannot know. The headline is the mean over questions. Exact match is reported as well.
 - **Calls, tokens, cost and latency** are counted the same way for every system by a local meter between
   the system and the model endpoint. Every system gets the same model and the same number of requests in
   flight, and questions run one at a time.

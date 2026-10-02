@@ -1,9 +1,9 @@
-"""The one-off 2024 -> BlendSQL 0.1.x query translation (scripts/blendsql_2024_syntax.py)."""
+"""The one-off 2024 -> BlendSQL 0.1.x query translation (swan1/scripts/blendsql_2024_syntax.py)."""
 
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "swan1" / "scripts"))
 from blendsql_2024_syntax import semicolon_options, translate  # noqa: E402
 
 

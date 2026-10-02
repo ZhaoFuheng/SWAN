@@ -6,7 +6,7 @@ s AS (
     SELECT *, School || ', ' || Street || ', ' || State || ' ' || Zip AS school_address
     FROM schools
 )
-SELECT s.School, s.Phone
+SELECT DISTINCT s.School, s.Phone
 FROM f INNER JOIN s ON f.CDSCode = s.CDSCode
 WHERE s.OpenDate > '2012-01-01'
   AND f."Charter School (Y/N)" = 1

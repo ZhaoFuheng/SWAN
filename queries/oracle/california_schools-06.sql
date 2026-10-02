@@ -1,9 +1,13 @@
 WITH s AS (
     SELECT *, School || ', ' || Street || ', ' || State || ' ' || Zip AS school_address
     FROM schools
+),
+ranked AS (
+    SELECT DISTINCT substr(s.CDSCode, 1, 14) AS cds, s.Phone, s.City, s.school_address, CAST(T1.NumGE1500 AS DOUBLE) / T1.NumTstTakr AS excellence_rate
+    FROM satscores AS T1 INNER JOIN s ON T1.cds = s.CDSCode
+    WHERE T1.NumTstTakr >= 100 AND T1.NumGE1500 IS NOT NULL
 )
-SELECT s.Phone, s.City
-FROM satscores AS T1 INNER JOIN s ON T1.cds = s.CDSCode
-WHERE T1.NumTstTakr >= 100 AND T1.NumGE1500 IS NOT NULL
-ORDER BY CAST(T1.NumGE1500 AS DOUBLE) / T1.NumTstTakr DESC, s.CDSCode
+SELECT ranked.Phone, ranked.City
+FROM ranked
+ORDER BY ranked.excellence_rate DESC, ranked.cds
 LIMIT 10

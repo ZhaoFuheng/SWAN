@@ -5,4 +5,8 @@ WITH s AS (
 SELECT DISTINCT T1."District Name"
 FROM frpm AS T1 INNER JOIN s ON T1.CDSCode = s.CDSCode
 WHERE s.Zip LIKE '945%'
-  AND ai_filter('Is the school located in the city of Hayward, California? school_address: ' || s.school_address)
+  AND ai_filter('Context:
+[school_address]: «' || s.school_address || '»
+
+
+Claim: Is the school located in the city of Hayward, California? school_address')

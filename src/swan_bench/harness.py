@@ -1,15 +1,15 @@
 """Run one system over the benchmark and score it.
 
-For each question, the gold query runs on the ORIGINAL database and the system's query on the MASKED one;
-`execution.results_match` compares them (in order when the gold query has an ORDER BY). A query that
-raises counts as wrong. The system's LLM traffic goes through a `Meter`, so calls, tokens, cost and
-latency are measured the same way for every system. Queries run one at a time.
+For each question, the gold query runs on the ORIGINAL database and the question's AISQL query, through
+the system, on the MASKED one; `quality.py` scores the answer (quality, and the 2024 exact match). A query
+that raises scores 0. The system's LLM traffic goes through a `Meter`, so calls, tokens, cost and latency
+are measured the same way for every system. Questions run one at a time.
 
 Output, under `runs/<system>/<tag>/`:
 - `queries.jsonl`: one record per question, appended as soon as it finishes. A rerun skips the questions
   already recorded, so an interrupted run resumes; `--retry-errors` reruns the questions that raised
   (a later record replaces an earlier one); `--rerun` starts over.
-- `scores.json`: per-database and overall accuracy and totals, rebuilt from `queries.jsonl`.
+- `scores.json`: per-database and overall quality, exact-match counts and totals, rebuilt from `queries.jsonl`.
 """
 
 import json
@@ -150,7 +150,8 @@ def run(system_name: str, model: str, endpoint: str | None, databases=paths.DATA
             record["ran_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
             with open(log, "a") as f:
                 f.write(json.dumps(record, default=str) + "\n")
-            verdict = "match" if record["match"] else ("ERROR " + record["error"][:80] if record["error"] else "wrong")
+            verdict = (f"quality {record['quality']:.2f}" + (" (exact)" if record["match"] else "")
+                       if not record["error"] else "ERROR " + record["error"][:80])
             print(f"{q.qid:24} {record['seconds']:8.1f}s calls={record['requests']:6} "
                   f"fresh={record['fresh_calls']!s:>6} ${record['cost_usd']:.4f}  {verdict}", flush=True)
         if hasattr(system, "close"):

@@ -11,13 +11,16 @@ from swan_bench.lotus_exec import LotusExecutor
 from swan_bench.shadow import ShadowModel, classify_answer, complete_answer, filter_answer
 from swan_bench.translate_blendsql import to_blendsql
 
-FILTER = "ai_filter('Is the hero male? superhero_name: ' || T1.superhero_name)"
+FILTER = "ai_filter('Context:\n[superhero_name]: «' || T1.superhero_name || '»\n\n\nClaim: Is the hero male? superhero_name')"
 
 
 def test_prompt_form():
     assert lint(f"SELECT count(*) FROM superhero AS T1 WHERE {FILTER}") == []
-    assert "context column's name" in lint("SELECT 1 FROM t WHERE ai_filter('Male? name: ' || t.other)")[0]
-    assert "one column" in lint("SELECT 1 FROM t WHERE ai_filter('Male? k: ' || upper(t.k))")[0]
+    assert "context column's name" in lint("SELECT ai_complete('Male? name: ' || t.other) FROM t")[0]
+    assert "one column" in lint("SELECT ai_complete('Male? k: ' || upper(t.k)) FROM t")[0]
+    assert "claim layout" not in lint("SELECT 1 FROM t WHERE ai_filter('Male? k: ' || t.k)")[0]
+    assert "ai_filter: the prompt must be" in lint("SELECT 1 FROM t WHERE ai_filter('Male? k: ' || t.k)")[0]
+    assert "ai_filter takes one prompt" in lint("SELECT 1 FROM t WHERE ai_filter('Male?', t.k)")[0]
     assert "suffix" in lint("SELECT ai_complete('Q k: ' || t.k || ' please') FROM t")[0]
     assert "not part of" in lint("SELECT ai_score('Q k: ' || t.k, 'r', 1, 5) FROM t")[0]
     assert "no AI call" in lint("SELECT 1")[0]
@@ -79,10 +82,10 @@ def test_lotus_follows_the_written_order(db):
     ops = FakeOps()
     ex = LotusExecutor(db, ops)
     # the cheap filter is written after the AI filter, so the AI sees all 40 rows; LOTUS never deduplicates
-    ex.run("SELECT count(*) FROM hero AS h WHERE ai_filter('Q1? name: ' || h.name) AND h.id < 10")
+    ex.run("SELECT count(*) FROM hero AS h WHERE ai_filter('Context:\n[name]: «' || h.name || '»\n\n\nClaim: Q1? name') AND h.id < 10")
     assert ops.seen == [("Q1?", 40)]
     ops.seen.clear()
-    ex.run("SELECT count(*) FROM hero AS h WHERE h.id < 10 AND ai_filter('Q1? name: ' || h.name)")
+    ex.run("SELECT count(*) FROM hero AS h WHERE h.id < 10 AND ai_filter('Context:\n[name]: «' || h.name || '»\n\n\nClaim: Q1? name')")
     assert ops.seen == [("Q1?", 10)]
     ops.seen.clear()
     # SELECT-list AI runs on every row that passed WHERE, before ORDER BY / LIMIT
@@ -95,7 +98,7 @@ def test_lotus_follows_the_written_order(db):
 def test_lotus_matches_expected_semantics(db):
     ex = LotusExecutor(db, FakeOps())
     got = ex.run("WITH k AS (SELECT h.id, h.name FROM hero AS h WHERE h.team = 1) "
-                 "SELECT count(*) FROM k WHERE ai_filter('Q2? name: ' || k.name) OR k.id = 1")
+                 "SELECT count(*) FROM k WHERE ai_filter('Context:\n[name]: «' || k.name || '»\n\n\nClaim: Q2? name') OR k.id = 1")
     want = sum(1 for i in range(40) if i % 3 == 1 and (filter_answer("Q2?", f"h{i % 7}") or i == 1))
     assert got.iloc[0, 0] == want
     agg = ex.run("SELECT (SELECT ai_agg(list(h.name), 'Oldest?') FROM hero AS h WHERE h.id < 5) AS a")
@@ -104,7 +107,7 @@ def test_lotus_matches_expected_semantics(db):
 
 
 def test_shadow_reads_every_system_the_same_way():
-    shadow = ShadowModel(["Is the hero male? superhero_name: "])
+    shadow = ShadowModel({"Is the hero male? superhero_name: ": "Is the hero male?"})
     want = filter_answer("Is the hero male?", "3-D Man")
     swan = {"response_format": {"json_schema": {"schema": {"properties": {"result": {"type": "boolean"}}}}},
             "messages": [{"role": "system", "content": "x"},
@@ -122,11 +125,11 @@ def test_shadow_reads_every_system_the_same_way():
 
 def test_lotus_output_columns_keep_their_names(db):
     ex = LotusExecutor(db, FakeOps())
-    got = ex.run("WITH t AS (SELECT h.id, h.name FROM hero AS h WHERE ai_filter('Q3? name: ' || h.name)) "
+    got = ex.run("WITH t AS (SELECT h.id, h.name FROM hero AS h WHERE ai_filter('Context:\n[name]: «' || h.name || '»\n\n\nClaim: Q3? name')) "
                  "SELECT count(t.id) FROM t")
     want = sum(1 for i in range(40) if filter_answer("Q3?", f"h{i % 7}"))
     assert got.iloc[0, 0] == want
-    star = ex.run("WITH t AS (SELECT * FROM hero AS h WHERE h.id < 3 AND ai_filter('Q3? name: ' || h.name)) "
+    star = ex.run("WITH t AS (SELECT * FROM hero AS h WHERE h.id < 3 AND ai_filter('Context:\n[name]: «' || h.name || '»\n\n\nClaim: Q3? name')) "
                   "SELECT t.id FROM t ORDER BY t.id")
     assert list(star.iloc[:, 0]) == [i for i in range(3) if filter_answer("Q3?", f"h{i % 7}")]
     ex.close()
@@ -135,3 +138,12 @@ def test_lotus_output_columns_keep_their_names(db):
 def test_negated_filter_becomes_false():
     b = to_blendsql(f"SELECT count(*) FROM superhero AS T1 WHERE T1.id < 9 AND NOT {FILTER}")
     assert "{{LLMMap('Is the hero male?', T1.superhero_name)}} = FALSE" in b and "NOT" not in b
+
+
+def test_shadow_reads_swan_two_argument_filter():
+    shadow = ShadowModel({})
+    want = filter_answer("Is the hero male?", "3-D Man")
+    swan = {"response_format": {"json_schema": {"schema": {"properties": {"result": {"type": "boolean"}}}}},
+            "messages": [{"role": "system", "content": "x"}, {"role": "user", "content":
+                         "Context:\n[superhero_name]: «3-D Man»\n\n\nClaim: Is the hero male? superhero_name"}]}
+    assert json.loads(shadow.respond(swan))["result"] == want

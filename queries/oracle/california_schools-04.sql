@@ -6,7 +6,7 @@ s AS (
     SELECT *, School || ', ' || Street || ', ' || State || ' ' || Zip AS school_address
     FROM schools
 )
-SELECT s.School
+SELECT DISTINCT s.School
 FROM satscores AS T1 INNER JOIN s ON T1.cds = s.CDSCode INNER JOIN f ON f.CDSCode = s.CDSCode
 WHERE T1.NumTstTakr > 300
   AND (s.Magnet = 1

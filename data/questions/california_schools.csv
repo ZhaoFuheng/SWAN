@@ -1,124 +1,138 @@
 qid,db,question,evidence,difficulty,shape,gold_sql
-california_schools-00,california_schools,"Among the schools with fewer than 100 students enrolled in K-12, list the names and eligible free rates (ages 5-17) of the ten continuation schools with the lowest rate.",Eligible free rate for students aged 5-17 = `Free Meal Count (Ages 5-17)` / `Enrollment (Ages 5-17)`; continuation schools have `Educational Option Type` = 'Continuation School'; ties broken by school name and CDSCode,moderate,plain,"SELECT `School Name`, `Free Meal Count (Ages 5-17)` / `Enrollment (Ages 5-17)` AS free_rate
-FROM frpm
-WHERE `Enrollment (K-12)` < 100 AND `Enrollment (Ages 5-17)` > 0 AND `Free Meal Count (Ages 5-17)` IS NOT NULL
-  AND `Educational Option Type` = 'Continuation School'
-ORDER BY free_rate, `School Name`, CDSCode
+california_schools-00,california_schools,"Among the schools with fewer than 100 students enrolled in K-12, list the names and eligible free rates (ages 5-17) of the ten continuation schools with the lowest rate.",Eligible free rate for students aged 5-17 = `Free Meal Count (Ages 5-17)` / `Enrollment (Ages 5-17)`; continuation schools have `Educational Option Type` = 'Continuation School'; ties broken by school name and CDS code,moderate,plain,"SELECT `School Name`, free_rate
+FROM (SELECT DISTINCT substr(CDSCode, 1, 14) AS cds, `School Name`, `Free Meal Count (Ages 5-17)` / `Enrollment (Ages 5-17)` AS free_rate
+      FROM frpm
+      WHERE `Enrollment (K-12)` < 100 AND `Enrollment (Ages 5-17)` > 0 AND `Free Meal Count (Ages 5-17)` IS NOT NULL
+        AND `Educational Option Type` = 'Continuation School')
+ORDER BY free_rate, `School Name`, cds
 LIMIT 10"
-california_schools-01,california_schools,"List any 5 charter schools in the Chula Vista Elementary district, with their CDS code and name.",Charter schools have `Charter School (Y/N)` = 1 in the frpm table,simple,any_k,"SELECT CDSCode, `School Name`
+california_schools-01,california_schools,"List any 5 charter schools in the Chula Vista Elementary district, with their CDS code and name.",Charter schools have `Charter School (Y/N)` = 1 in the frpm table,simple,any_k,"SELECT DISTINCT substr(CDSCode, 1, 14) AS CDSCode, `School Name`
 FROM frpm
 WHERE `District Name` = 'Chula Vista Elementary' AND `Charter School (Y/N)` = 1"
-california_schools-02,california_schools,"What are the mailing street and mailing city of the schools with an FRPM count (K-12) above 2,500?",FRPM count (K-12) refers to `FRPM Count (K-12)`,simple,plain,"SELECT T2.MailStreet, T2.MailCity
+california_schools-02,california_schools,"What are the mailing street and mailing city of the schools with an FRPM count (K-12) above 2,500?",FRPM count (K-12) refers to `FRPM Count (K-12)`,simple,plain,"SELECT DISTINCT T2.MailStreet, T2.MailCity
 FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode = T2.CDSCode
 WHERE T1.`FRPM Count (K-12)` > 2500"
-california_schools-03,california_schools,Please list the names and phone numbers of the directly funded charter schools in Fresno County that opened after 2012-01-01.,Charter schools have `Charter School (Y/N)` = 1 in the frpm table; directly funded refers to `Charter Funding Type` = 'Directly funded',moderate,multi_filter,"SELECT T2.School, T2.Phone
+california_schools-03,california_schools,Please list the names and phone numbers of the directly funded charter schools in Fresno County that opened after 2012-01-01.,Charter schools have `Charter School (Y/N)` = 1 in the frpm table; directly funded refers to `Charter Funding Type` = 'Directly funded',moderate,multi_filter,"SELECT DISTINCT T2.School, T2.Phone
 FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode = T2.CDSCode
 WHERE T2.OpenDate > '2012-01-01' AND T1.`Charter School (Y/N)` = 1
   AND T1.`Charter Funding Type` = 'Directly funded' AND T2.County = 'Fresno'"
-california_schools-04,california_schools,"Among the schools with more than 300 SAT test takers, list the schools that are magnet schools or offer a magnet program, or that are charter schools in San Diego County.",Magnet schools or offer a magnet program means that Magnet = 1; charter schools have `Charter School (Y/N)` = 1 in the frpm table,moderate,boolean,"SELECT T2.School
+california_schools-04,california_schools,"Among the schools with more than 300 SAT test takers, list the schools that are magnet schools or offer a magnet program, or that are charter schools in San Diego County.",Magnet schools or offer a magnet program means that Magnet = 1; charter schools have `Charter School (Y/N)` = 1 in the frpm table,moderate,boolean,"SELECT DISTINCT T2.School
 FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode INNER JOIN frpm AS T3 ON T3.CDSCode = T2.CDSCode
 WHERE T1.NumTstTakr > 300
   AND (T2.Magnet = 1 OR (T3.`Charter School (Y/N)` = 1 AND T2.County = 'San Diego'))"
-california_schools-05,california_schools,"Among the schools with an average SAT math score over 560, how many are directly funded charter schools that are not magnet schools?",Charter schools have `Charter School (Y/N)` = 1 in the frpm table; directly funded refers to `Charter Funding Type` = 'Directly funded'; not a magnet school means Magnet = 0,moderate,multi_filter,"SELECT COUNT(*)
+california_schools-05,california_schools,"Among the schools with an average SAT math score over 560, how many are directly funded charter schools that are not magnet schools?",Charter schools have `Charter School (Y/N)` = 1 in the frpm table; directly funded refers to `Charter Funding Type` = 'Directly funded'; not a magnet school means Magnet = 0,moderate,multi_filter,"SELECT COUNT(DISTINCT substr(T2.CDSCode, 1, 14))
 FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode INNER JOIN frpm AS T3 ON T3.CDSCode = T2.CDSCode
 WHERE T1.AvgScrMath > 560 AND T3.`Charter School (Y/N)` = 1 AND T3.`Charter Funding Type` = 'Directly funded'
   AND T2.Magnet = 0"
-california_schools-06,california_schools,"Among the schools with at least 100 SAT test takers, list the phone numbers and cities of the 10 schools with the highest SAT excellence rate.",Excellence rate = NumGE1500 / NumTstTakr; ties broken by CDSCode,moderate,top_n,"SELECT T2.Phone, T2.City
-FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode
-WHERE T1.NumTstTakr >= 100 AND T1.NumGE1500 IS NOT NULL
-ORDER BY CAST(T1.NumGE1500 AS REAL) / T1.NumTstTakr DESC, T2.CDSCode
+california_schools-06,california_schools,"Among the schools with at least 100 SAT test takers, list the phone numbers and cities of the 10 schools with the highest SAT excellence rate.",Excellence rate = NumGE1500 / NumTstTakr; ties broken by CDSCode,moderate,top_n,"SELECT Phone, City
+FROM (SELECT DISTINCT substr(T2.CDSCode, 1, 14) AS cds, T2.Phone, T2.City, CAST(T1.NumGE1500 AS REAL) / T1.NumTstTakr AS excellence_rate
+      FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode
+      WHERE T1.NumTstTakr >= 100 AND T1.NumGE1500 IS NOT NULL)
+ORDER BY excellence_rate DESC, cds
 LIMIT 10"
-california_schools-07,california_schools,How many schools in Sacramento County have fewer than 100 SAT test takers?,,simple,cheap_after,"SELECT COUNT(T1.CDSCode)
+california_schools-07,california_schools,How many schools in Sacramento County have fewer than 100 SAT test takers?,,simple,cheap_after,"SELECT COUNT(DISTINCT substr(T1.CDSCode, 1, 14))
 FROM schools AS T1 INNER JOIN satscores AS T2 ON T1.CDSCode = T2.cds
 WHERE T1.County = 'Sacramento' AND T2.NumTstTakr < 100"
-california_schools-08,california_schools,How many directly funded charter schools in Los Angeles County that are not magnet schools have between 100 and 250 SAT test takers?,Charter schools have `Charter School (Y/N)` = 1 in the frpm table; directly funded refers to `Charter Funding Type` = 'Directly funded'; not a magnet school means Magnet = 0,moderate,multi_filter,"SELECT COUNT(T1.CDSCode)
+california_schools-08,california_schools,How many directly funded charter schools in Los Angeles County that are not magnet schools have between 100 and 250 SAT test takers?,Charter schools have `Charter School (Y/N)` = 1 in the frpm table; directly funded refers to `Charter Funding Type` = 'Directly funded'; not a magnet school means Magnet = 0,moderate,multi_filter,"SELECT COUNT(DISTINCT substr(T1.CDSCode, 1, 14))
 FROM schools AS T1 INNER JOIN satscores AS T2 ON T1.CDSCode = T2.cds INNER JOIN frpm AS T3 ON T1.CDSCode = T3.CDSCode
 WHERE T2.NumTstTakr BETWEEN 100 AND 250 AND T3.`Charter School (Y/N)` = 1
   AND T3.`Charter Funding Type` = 'Directly funded' AND T1.County = 'Los Angeles' AND T1.Magnet = 0"
-california_schools-09,california_schools,"In Los Angeles County, how many schools have more than 500 free meals but fewer than 700 free or reduced price meals for K-12?",Free meals for K-12 refers to `Free Meal Count (K-12)`; free or reduced price meals for K-12 refers to `FRPM Count (K-12)`,simple,plain,"SELECT COUNT(T1.CDSCode)
+california_schools-09,california_schools,"In Los Angeles County, how many schools have more than 500 free meals but fewer than 700 free or reduced price meals for K-12?",Free meals for K-12 refers to `Free Meal Count (K-12)`; free or reduced price meals for K-12 refers to `FRPM Count (K-12)`,simple,plain,"SELECT COUNT(DISTINCT substr(T1.CDSCode, 1, 14))
 FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode = T2.CDSCode
 WHERE T1.`Free Meal Count (K-12)` > 500 AND T1.`FRPM Count (K-12)` < 700 AND T2.County = 'Los Angeles'"
-california_schools-10,california_schools,"Among the schools with at least 100 SAT test takers, which school in an Orange County school district has the highest number of test takers?",School districts are the district-level SAT records (rtype = 'D'); a school belongs to the district whose dname equals its District; the district's county is cname,moderate,join_fanout,"SELECT T2.School
-FROM satscores AS D INNER JOIN schools AS T2 ON T2.District = D.dname INNER JOIN satscores AS T1 ON T1.cds = T2.CDSCode
-WHERE D.rtype = 'D' AND T1.NumTstTakr >= 100 AND D.cname = 'Orange'
-ORDER BY T1.NumTstTakr DESC, T2.School, T2.CDSCode
+california_schools-10,california_schools,"Among the schools with at least 100 SAT test takers, which school in an Orange County school district has the highest number of test takers?",School districts are the district-level SAT records (rtype = 'D'); a school belongs to the district whose dname equals its District; the district's county is cname,moderate,join_fanout,"SELECT School
+FROM (SELECT DISTINCT substr(T2.CDSCode, 1, 14) AS cds, T2.School, T1.NumTstTakr
+      FROM satscores AS D INNER JOIN schools AS T2 ON T2.District = D.dname INNER JOIN satscores AS T1 ON T1.cds = T2.CDSCode
+      WHERE D.rtype = 'D' AND T1.NumTstTakr >= 100 AND D.cname = 'Orange')
+ORDER BY NumTstTakr DESC, School, cds
 LIMIT 1"
-california_schools-11,california_schools,List the names and charter funding types of the charter schools in Riverside County that are not magnet schools and have an average SAT math score above 400.,Charter schools have `Charter School (Y/N)` = 1 in the frpm table; the funding type is `Charter Funding Type`; not a magnet school means Magnet = 0,challenging,multi_filter,"SELECT T1.sname, T3.`Charter Funding Type`
+california_schools-11,california_schools,List the names and charter funding types of the charter schools in Riverside County that are not magnet schools and have an average SAT math score above 400.,Charter schools have `Charter School (Y/N)` = 1 in the frpm table; the funding type is `Charter Funding Type`; not a magnet school means Magnet = 0,challenging,multi_filter,"SELECT DISTINCT T1.sname, T3.`Charter Funding Type`
 FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode INNER JOIN frpm AS T3 ON T3.CDSCode = T2.CDSCode
 WHERE T1.AvgScrMath > 400 AND T2.County = 'Riverside' AND T3.`Charter School (Y/N)` = 1 AND T2.Magnet = 0"
-california_schools-12,california_schools,"State the names and full communication addresses (street, city, zip, state) of the traditional, non-charter high schools in Monterey County that have more than 800 free or reduced price meals for ages 5-17.",High schools have `School Type` = 'High Schools (Public)'; traditional refers to `Educational Option Type` = 'Traditional'; non-charter means `Charter School (Y/N)` = 0; free or reduced price meals for ages 5-17 refers to `FRPM Count (Ages 5-17)`,challenging,multi_filter,"SELECT T1.`School Name`, T2.Street, T2.City, T2.Zip, T2.State
+california_schools-12,california_schools,"State the names and full communication addresses (street, city, zip, state) of the traditional, non-charter high schools in Monterey County that have more than 800 free or reduced price meals for ages 5-17.",High schools have `School Type` = 'High Schools (Public)'; traditional refers to `Educational Option Type` = 'Traditional'; non-charter means `Charter School (Y/N)` = 0; free or reduced price meals for ages 5-17 refers to `FRPM Count (Ages 5-17)`,challenging,multi_filter,"SELECT DISTINCT T1.`School Name`, T2.Street, T2.City, T2.Zip, T2.State
 FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode = T2.CDSCode
 WHERE T1.`School Type` = 'High Schools (Public)' AND T1.`FRPM Count (Ages 5-17)` > 800
   AND T1.`Educational Option Type` = 'Traditional' AND T1.`Charter School (Y/N)` = 0 AND T2.County = 'Monterey'"
 california_schools-13,california_schools,"Among the K-12 schools that are locally funded charter schools, consider the average difference between their K-12 enrollment and their ages 5-17 enrollment. How many of these schools have a difference above this average?",K-12 schools have `School Type` = 'K-12 Schools (Public)'; locally funded refers to `Charter Funding Type` = 'Locally funded'; difference = `Enrollment (K-12)` - `Enrollment (Ages 5-17)`,challenging,cte_reuse,"SELECT COUNT(*)
-FROM frpm AS T1
-WHERE T1.`School Type` = 'K-12 Schools (Public)' AND T1.`Charter Funding Type` = 'Locally funded'
-  AND T1.`Enrollment (K-12)` - T1.`Enrollment (Ages 5-17)` > (
-    SELECT AVG(T2.`Enrollment (K-12)` - T2.`Enrollment (Ages 5-17)`)
-    FROM frpm AS T2
-    WHERE T2.`School Type` = 'K-12 Schools (Public)' AND T2.`Charter Funding Type` = 'Locally funded')"
+FROM (SELECT DISTINCT substr(CDSCode, 1, 14) AS cds, `Enrollment (K-12)` AS enroll_k12, `Enrollment (Ages 5-17)` AS enroll_5_17
+      FROM frpm
+      WHERE `School Type` = 'K-12 Schools (Public)' AND `Charter Funding Type` = 'Locally funded') AS T1
+WHERE T1.enroll_k12 - T1.enroll_5_17 > (
+    SELECT AVG(T2.enroll_k12 - T2.enroll_5_17)
+    FROM (SELECT DISTINCT substr(CDSCode, 1, 14) AS cds, `Enrollment (K-12)` AS enroll_k12, `Enrollment (Ages 5-17)` AS enroll_5_17
+      FROM frpm
+      WHERE `School Type` = 'K-12 Schools (Public)' AND `Charter Funding Type` = 'Locally funded') AS T2)"
 california_schools-14,california_schools,"Among the schools with a ZIP code starting with 945, which school districts have at least one school located in the city of Hayward?",School districts refer to `District Name` in the frpm table,moderate,distinct_exists,"SELECT DISTINCT T1.`District Name`
 FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode = T2.CDSCode
 WHERE T2.Zip LIKE '945%' AND T2.City = 'Hayward'"
-california_schools-15,california_schools,"List any 5 schools in Los Angeles County with a free meal count between 700 and 1,000 for students aged 5-17: give their CDS code, name and website address.",Free meal count for students aged 5-17 refers to `Free Meal Count (Ages 5-17)`,moderate,any_k,"SELECT T2.CDSCode, T2.School, T2.Website
+california_schools-15,california_schools,"List any 5 schools in Los Angeles County with a free meal count between 700 and 1,000 for students aged 5-17: give their CDS code, name and website address.",Free meal count for students aged 5-17 refers to `Free Meal Count (Ages 5-17)`,moderate,any_k,"SELECT DISTINCT substr(T2.CDSCode, 1, 14) AS CDSCode, T2.School, T2.Website
 FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode = T2.CDSCode
 WHERE T1.`Free Meal Count (Ages 5-17)` BETWEEN 700 AND 1000 AND T2.County = 'Los Angeles'"
-california_schools-16,california_schools,"List every school of the Stockton Unified district with its administrator's email address; for the schools with fewer than 300 students enrolled in K-12, also tell whether they are charter schools ('Yes' or 'No').",Charter schools have `Charter School (Y/N)` = 1 in the frpm table; students enrolled in K-12 refers to `Enrollment (K-12)`; the charter answer is NULL for the other schools,moderate,case,"SELECT T1.`School Name`, T2.AdmEmail1,
+california_schools-16,california_schools,"List every school of the Stockton Unified district with its administrator's email address; for the schools with fewer than 300 students enrolled in K-12, also tell whether they are charter schools ('Yes' or 'No').",Charter schools have `Charter School (Y/N)` = 1 in the frpm table; students enrolled in K-12 refers to `Enrollment (K-12)`; the charter answer is NULL for the other schools,moderate,case,"SELECT DISTINCT T1.`School Name`, T2.AdmEmail1,
     CASE WHEN T1.`Enrollment (K-12)` < 300
          THEN CASE WHEN T1.`Charter School (Y/N)` = 1 THEN 'Yes' ELSE 'No' END END AS is_charter
 FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode = T2.CDSCode
 WHERE T1.`District Name` = 'Stockton Unified'"
-california_schools-17,california_schools,"Among the schools with at least 100 SAT test takers, what is the complete address (street, city, zip and state) of the 10 schools with the lowest excellence rate?",Excellence rate = NumGE1500 / NumTstTakr; ties broken by CDSCode,moderate,top_n,"SELECT T2.Street, T2.City, T2.Zip, T2.State
-FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode
-WHERE T1.NumTstTakr >= 100 AND T1.NumGE1500 IS NOT NULL
-ORDER BY CAST(T1.NumGE1500 AS REAL) / T1.NumTstTakr, T2.CDSCode
+california_schools-17,california_schools,"Among the schools with at least 100 SAT test takers, what is the complete address (street, city, zip and state) of the 10 schools with the lowest excellence rate?",Excellence rate = NumGE1500 / NumTstTakr; ties broken by CDSCode,moderate,top_n,"SELECT Street, City, Zip, State
+FROM (SELECT DISTINCT substr(T2.CDSCode, 1, 14) AS cds, T2.Street, T2.City, T2.Zip, T2.State, CAST(T1.NumGE1500 AS REAL) / T1.NumTstTakr AS excellence_rate
+      FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode
+      WHERE T1.NumTstTakr >= 100 AND T1.NumGE1500 IS NOT NULL)
+ORDER BY excellence_rate, cds
 LIMIT 10"
-california_schools-18,california_schools,What are the names and websites of the schools with between 150 and 200 SAT test takers that are in Los Angeles County or are magnet schools?,Magnet schools or offer a magnet program means that Magnet = 1,moderate,boolean,"SELECT T2.School, T2.Website
+california_schools-18,california_schools,What are the names and websites of the schools with between 150 and 200 SAT test takers that are in Los Angeles County or are magnet schools?,Magnet schools or offer a magnet program means that Magnet = 1,moderate,boolean,"SELECT DISTINCT T2.School, T2.Website
 FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode
 WHERE T1.NumTstTakr BETWEEN 150 AND 200 AND (T2.County = 'Los Angeles' OR T2.Magnet = 1)"
-california_schools-19,california_schools,What is the average number of SAT test takers of the Fresno County schools that opened between 1/1/1990 and 12/31/1999?,Opened between 1/1/1990 and 12/31/1999 means OpenDate between '1990-01-01' and '1999-12-31',simple,plain,"SELECT AVG(T1.NumTstTakr)
-FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode
-WHERE T2.OpenDate BETWEEN '1990-01-01' AND '1999-12-31' AND T2.County = 'Fresno'"
-california_schools-20,california_schools,"List the schools with an average SAT reading score of at least 600 and their reading scores; for the schools that do not offer virtual instruction, also tell whether they are magnet schools ('Yes' or 'No').",Not offering virtual instruction refers to Virtual = 'N'; magnet schools or offer a magnet program means that Magnet = 1; the magnet answer is NULL for the other schools,moderate,case,"SELECT T2.School, T1.AvgScrRead,
+california_schools-19,california_schools,What is the average number of SAT test takers of the Fresno County schools that opened between 1/1/1990 and 12/31/1999?,Opened between 1/1/1990 and 12/31/1999 means OpenDate between '1990-01-01' and '1999-12-31',simple,plain,"SELECT AVG(NumTstTakr)
+FROM (SELECT DISTINCT substr(T2.CDSCode, 1, 14) AS cds, T1.NumTstTakr
+      FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode
+      WHERE T2.OpenDate BETWEEN '1990-01-01' AND '1999-12-31' AND T2.County = 'Fresno')"
+california_schools-20,california_schools,"List the schools with an average SAT reading score of at least 600 and their reading scores; for the schools that do not offer virtual instruction, also tell whether they are magnet schools ('Yes' or 'No').",Not offering virtual instruction refers to Virtual = 'N'; magnet schools or offer a magnet program means that Magnet = 1; the magnet answer is NULL for the other schools,moderate,case,"SELECT DISTINCT T2.School, T1.AvgScrRead,
     CASE WHEN T2.Virtual = 'N' THEN CASE WHEN T2.Magnet = 1 THEN 'Yes' ELSE 'No' END END AS is_magnet
 FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode
 WHERE T1.AvgScrRead >= 600"
-california_schools-21,california_schools,"Among the schools with an average SAT math score of at least 550, which county has the most such schools, and what is the average math score of those schools in that county?",Ties in the number of schools are broken by the county name,challenging,cte_reuse,"SELECT T2.County, AVG(T1.AvgScrMath)
-FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode
-WHERE T1.AvgScrMath >= 550
-  AND T2.County = (SELECT T4.County
-                   FROM satscores AS T3 INNER JOIN schools AS T4 ON T3.cds = T4.CDSCode
-                   WHERE T3.AvgScrMath >= 550
-                   GROUP BY T4.County
-                   ORDER BY COUNT(*) DESC, T4.County
+california_schools-21,california_schools,"Among the schools with an average SAT math score of at least 550, which county has the most such schools, and what is the average math score of those schools in that county?",Ties in the number of schools are broken by the county name,challenging,cte_reuse,"SELECT T1.County, AVG(T1.AvgScrMath)
+FROM (SELECT DISTINCT substr(T2.CDSCode, 1, 14) AS cds, T1.AvgScrMath, T2.County
+      FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode
+      WHERE T1.AvgScrMath >= 550) AS T1
+WHERE T1.County = (SELECT T3.County
+                   FROM (SELECT DISTINCT substr(T2.CDSCode, 1, 14) AS cds, T1.AvgScrMath, T2.County
+      FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode
+      WHERE T1.AvgScrMath >= 550) AS T3
+                   GROUP BY T3.County
+                   ORDER BY COUNT(*) DESC, T3.County
                    LIMIT 1)
-GROUP BY T2.County"
-california_schools-22,california_schools,"List the names, average writing scores and cities of the 5 schools with the highest number of SAT test takers whose total score is at least 1500.",Number of test takers whose total SAT score is at least 1500 refers to NumGE1500; ties broken by CDSCode,moderate,top_n,"SELECT T2.School, T1.AvgScrWrite, T2.City
-FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode
-WHERE T1.NumGE1500 >= 100
-ORDER BY T1.NumGE1500 DESC, T2.CDSCode
+GROUP BY T1.County"
+california_schools-22,california_schools,"List the names, average writing scores and cities of the 5 schools with the highest number of SAT test takers whose total score is at least 1500.",Number of test takers whose total SAT score is at least 1500 refers to NumGE1500; ties broken by CDSCode,moderate,top_n,"SELECT School, AvgScrWrite, City
+FROM (SELECT DISTINCT substr(T2.CDSCode, 1, 14) AS cds, T2.School, T1.AvgScrWrite, T2.City, T1.NumGE1500
+      FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode
+      WHERE T1.NumGE1500 >= 100)
+ORDER BY NumGE1500 DESC, cds
 LIMIT 5"
-california_schools-23,california_schools,What is the monthly average number of schools that opened in Los Angeles County under the jurisdiction of a High School District in 2004?,High School District refers to DOC = 56; monthly average number of schools that opened in 2004 = count(schools that opened in 2004) / 12,moderate,cheap_after,"SELECT CAST(COUNT(*) AS REAL) / 12
+california_schools-23,california_schools,What is the monthly average number of schools that opened in Los Angeles County under the jurisdiction of a High School District in 2004?,High School District refers to DOC = 56; monthly average number of schools that opened in 2004 = count(schools that opened in 2004) / 12,moderate,cheap_after,"SELECT CAST(COUNT(DISTINCT substr(CDSCode, 1, 14)) AS REAL) / 12
 FROM schools
 WHERE DOC = '56' AND County = 'Los Angeles' AND strftime('%Y', OpenDate) = '2004'"
-california_schools-24,california_schools,"In Orange County school districts, what is the ratio of high schools in Unified School Districts to high schools in High School Districts?","High schools have SOCType = 'High Schools (Public)'; Unified School District refers to DOC = 54; High School District refers to DOC = 56; school districts are the district-level SAT records (rtype = 'D') whose dname equals the school's District, and the district's county is cname",challenging,join_fanout,"SELECT CAST(SUM(CASE WHEN T2.DOC = '54' THEN 1 ELSE 0 END) AS REAL) / SUM(CASE WHEN T2.DOC = '56' THEN 1 ELSE 0 END)
+california_schools-24,california_schools,"Among the schools whose ZIP code starts with 926, 927 or 928, in Orange County school districts, what is the ratio of high schools in Unified School Districts to high schools in High School Districts?","ZIP code starts with 926, 927 or 928 means substr(Zip, 1, 3) IN ('926', '927', '928'); high schools have SOCType = 'High Schools (Public)'; Unified School District refers to DOC = 54; High School District refers to DOC = 56; school districts are the district-level SAT records (rtype = 'D') whose dname equals the school's District, and the district's county is cname",challenging,join_fanout,"SELECT CAST(COUNT(DISTINCT CASE WHEN T2.DOC = '54' THEN substr(T2.CDSCode, 1, 14) END) AS REAL)
+       / NULLIF(COUNT(DISTINCT CASE WHEN T2.DOC = '56' THEN substr(T2.CDSCode, 1, 14) END), 0)
 FROM satscores AS D INNER JOIN schools AS T2 ON T2.District = D.dname
-WHERE D.rtype = 'D' AND T2.SOCType = 'High Schools (Public)' AND T2.DOC IN ('54', '56') AND D.cname = 'Orange'"
-california_schools-25,california_schools,"Which county's school districts have the most closed schools, and how many closed schools do they have?","Closed schools have StatusType = 'Closed'; school districts are the district-level SAT records (rtype = 'D') whose dname equals the school's District, and the district's county is cname; ties broken by county name",challenging,join_fanout,"SELECT D.cname, COUNT(*) AS n
+WHERE substr(T2.Zip, 1, 3) IN ('926', '927', '928')
+  AND D.rtype = 'D' AND D.cname = 'Orange' AND T2.SOCType = 'High Schools (Public)' AND T2.DOC IN ('54', '56')"
+california_schools-25,california_schools,"Which county's school districts have the most closed schools, and how many closed schools do they have?","Closed schools have StatusType = 'Closed'; school districts are the district-level SAT records (rtype = 'D') whose dname equals the school's District, and the district's county is cname; ties broken by county name",challenging,join_fanout,"SELECT D.cname, COUNT(DISTINCT substr(T2.CDSCode, 1, 14)) AS n
 FROM satscores AS D INNER JOIN schools AS T2 ON T2.District = D.dname
 WHERE D.rtype = 'D' AND T2.StatusType = 'Closed'
 GROUP BY D.cname
 ORDER BY n DESC, D.cname
 LIMIT 1"
-california_schools-26,california_schools,What is the total number of schools whose mailing city is Escondido and whose total average SAT score is at least 1500?,Total average SAT score = AvgScrRead + AvgScrMath + AvgScrWrite,moderate,cheap_after,"SELECT COUNT(T1.cds)
+california_schools-26,california_schools,What is the total number of schools whose mailing city is Escondido and whose total average SAT score is at least 1500?,Total average SAT score = AvgScrRead + AvgScrMath + AvgScrWrite,moderate,cheap_after,"SELECT COUNT(DISTINCT substr(T1.cds, 1, 14))
 FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode
 WHERE T2.MailCity = 'Escondido' AND T1.AvgScrRead + T1.AvgScrMath + T1.AvgScrWrite >= 1500"
-california_schools-27,california_schools,"Among the schools with at least 100 SAT test takers, how many test takers are there in total at the schools located in the city of Fresno?",,simple,plain,"SELECT SUM(T1.NumTstTakr)
-FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode
-WHERE T1.NumTstTakr >= 100 AND T2.City = 'Fresno'"
-california_schools-28,california_schools,"List any 5 active continuation high schools in San Joaquin County whose mailing state is California, with their CDS code and name.",Continuation high schools have SOCType = 'Continuation High Schools'; active refers to StatusType = 'Active'; mailing state California refers to MailState = 'CA',simple,any_k,"SELECT CDSCode, School
+california_schools-27,california_schools,"Among the schools with at least 100 SAT test takers, how many test takers are there in total at the schools located in the city of Fresno?",,simple,plain,"SELECT SUM(NumTstTakr)
+FROM (SELECT DISTINCT substr(T2.CDSCode, 1, 14) AS cds, T1.NumTstTakr
+      FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode
+      WHERE T1.NumTstTakr >= 100 AND T2.City = 'Fresno')"
+california_schools-28,california_schools,"Among the schools whose ZIP code starts with 952 or 953, list any 5 active continuation high schools in San Joaquin County whose mailing state is California, with their CDS code and name.",ZIP code starts with 952 or 953 means Zip LIKE '952%' OR Zip LIKE '953%'; continuation high schools have SOCType = 'Continuation High Schools'; active refers to StatusType = 'Active'; mailing state California refers to MailState = 'CA',simple,any_k,"SELECT DISTINCT substr(CDSCode, 1, 14) AS CDSCode, School
 FROM schools
-WHERE SOCType = 'Continuation High Schools' AND StatusType = 'Active' AND MailState = 'CA' AND County = 'San Joaquin'"
-california_schools-29,california_schools,How many students from the ages of 5 to 17 are enrolled at the State Special School in Fremont for the 2014-2015 academic year?,State Special School means EdOpsCode = 'SSS',simple,plain,"SELECT T1.`Enrollment (Ages 5-17)`
+WHERE (Zip LIKE '952%' OR Zip LIKE '953%')
+  AND SOCType = 'Continuation High Schools' AND StatusType = 'Active' AND MailState = 'CA' AND County = 'San Joaquin'"
+california_schools-29,california_schools,"Among the schools whose ZIP code starts with 945, how many students from the ages of 5 to 17 are enrolled at the State Special School in Fremont for the 2014-2015 academic year?",ZIP code starts with 945 means Zip LIKE '945%'; State Special School means EdOpsCode = 'SSS' (EdOpsName 'State Special School'),simple,plain,"SELECT DISTINCT T1.`Enrollment (Ages 5-17)`
 FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode = T2.CDSCode
-WHERE T2.EdOpsCode = 'SSS' AND T2.City = 'Fremont' AND T1.`Academic Year` = '2014-2015'"
+WHERE T2.Zip LIKE '945%' AND T2.EdOpsCode = 'SSS' AND T2.City = 'Fremont' AND T1.`Academic Year` = '2014-2015'"

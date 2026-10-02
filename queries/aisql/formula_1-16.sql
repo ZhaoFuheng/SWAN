@@ -4,10 +4,16 @@ WITH race_data AS (
 ), may_races AS (
     SELECT race_data.raceId AS raceId
     FROM race_data
-    WHERE ai_filter('Was this Formula 1 race held in May? race: ' || race_data.race)
+    WHERE ai_filter('Context:
+[race]: «' || race_data.race || '»
+
+
+Claim: Was this Formula 1 race held in May? race')
       AND race_data.year = 1983
 )
-SELECT CAST(COUNT(CASE WHEN results.time IS NOT NULL THEN results.driverId END) AS DOUBLE) * 100
-       / COUNT(results.driverId)
+SELECT CAST(COUNT(DISTINCT CASE WHEN results.time IS NOT NULL
+                           THEN drivers.forename || '|' || drivers.surname || '|' || CAST(results.raceId AS VARCHAR) END) AS DOUBLE) * 100
+       / COUNT(DISTINCT drivers.forename || '|' || drivers.surname || '|' || CAST(results.raceId AS VARCHAR))
 FROM may_races
 INNER JOIN results ON results.raceId = may_races.raceId
+INNER JOIN drivers ON drivers.driverId = results.driverId

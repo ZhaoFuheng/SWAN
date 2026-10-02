@@ -1,4 +1,4 @@
-SELECT COUNT(*) * 100.0 / (SELECT COUNT(*) FROM superhero AS S WHERE S.height_cm > 200)
+SELECT COUNT(DISTINCT T1.superhero_name) * 100.0 / (SELECT COUNT(DISTINCT S.superhero_name) FROM superhero AS S WHERE S.height_cm > 200)
 FROM superhero AS T1
 WHERE T1.height_cm > 200
   AND T1.publisher_id = (SELECT id FROM publisher WHERE publisher_name = 'Marvel Comics')

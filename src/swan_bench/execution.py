@@ -5,14 +5,27 @@ multiset of values: rows are compared in order when the query has an ORDER BY, a
 inside a row are compared independently of column order.
 
 Floats are compared to 10 significant digits. The gold query runs in sqlite and a system may compute the
-same number in another engine (DuckDB, pandas), where summation order changes the last bits.
+same number in another engine (DuckDB, pandas), where summation order changes the last bits. URLs are
+compared without their scheme, `www.`, percent-encoding and trailing slash, which a model cannot know.
 """
 
 import math
-import multiprocessing as mp
+import re
 import sqlite3
 from decimal import Decimal
 from pathlib import Path
+from urllib.parse import unquote
+
+
+_URL = re.compile(r"^(?:https?://)?(?:www\.)?", re.I)
+
+
+def _canonical_url(text: str) -> str:
+    """A URL without the parts a model cannot know: scheme, `www.`, percent-encoding, trailing slash, case
+    of the host (`http://en.wikipedia.org/wiki/Mika_H%C3%A4kkinen` == `https://en.wikipedia.org/wiki/Mika_Häkkinen`)."""
+    rest = _URL.sub("", unquote(text.strip())).rstrip("/")
+    host, sep, path = rest.partition("/")
+    return host.lower() + sep + path
 
 
 def _canonical_value(value):
@@ -20,6 +33,8 @@ def _canonical_value(value):
         value = value.item()
     if isinstance(value, Decimal):
         value = float(value)
+    if isinstance(value, str) and _URL.match(value) and _URL.match(value).end() > 0:
+        return _canonical_url(value)
     if isinstance(value, float):
         if math.isnan(value):
             return None
@@ -45,28 +60,4 @@ def execute(db_path: Path | str, sql: str) -> list:
         return con.execute(sql).fetchall()
     finally:
         con.close()
-
-
-def _execute_into(db_path: str, sql: str, queue) -> None:
-    try:
-        queue.put(execute(db_path, sql))
-    except Exception as ex:  # noqa: BLE001 -- the exception itself is the result
-        queue.put(ex)
-
-
-def execute_with_timeout(db_path: Path | str, sql: str, timeout: float = 120.0):
-    """Run `sql` in a child process; returns the rows or the exception raised (a TimeoutError on timeout)."""
-    queue = mp.Queue()
-    proc = mp.Process(target=_execute_into, args=(str(db_path), sql, queue))
-    proc.start()
-    try:
-        result = queue.get(True, timeout + 5)
-    except Exception:  # noqa: BLE001 -- queue.Empty
-        result = TimeoutError("SQL query took too much time to execute.")
-    proc.join(timeout)
-    if proc.is_alive():
-        proc.terminate()
-        proc.join()
-        return TimeoutError("SQL query took too much time to execute.")
-    return result
 

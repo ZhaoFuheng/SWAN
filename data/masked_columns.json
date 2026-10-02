@@ -16,7 +16,12 @@
       "City",
       "MailCity",
       "Magnet",
-      "Website"
+      "Website",
+      "Charter",
+      "FundingType",
+      "EdOpsCode",
+      "EdOpsName",
+      "SOCType"
     ]
   },
   "superhero": {

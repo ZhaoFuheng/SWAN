@@ -63,9 +63,10 @@ def agg_answer(n_items: int) -> str:
 
 
 class ShadowModel:
-    def __init__(self, prefixes: list[str]):
-        """`prefixes`: every `'<question> <name>: '` of the benchmark's AI calls (for SWAN-AISQL prompts)."""
-        self.prefixes = sorted(set(prefixes), key=len, reverse=True)
+    def __init__(self, prefixes: dict[str, str]):
+        """`prefixes`: `'<question> <name>: '` -> question, for every ai_complete/ai_classify call in the
+        benchmark; SWAN-AISQL's prompt for those is the prefix followed by the value."""
+        self.prefixes = sorted(prefixes.items(), key=lambda kv: -len(kv[0]))
 
     # SWAN-AISQL: structured output {"result": ...}
     def _swan(self, body: dict, user: str) -> str:
@@ -79,6 +80,13 @@ class ShadowModel:
             text = rest.split("\n\nRespond with exactly one", 1)[0]
             question, value = self._split(text)
             return json.dumps({"result": classify_answer(question, value, labels)})
+        if '"boolean"' in schema and user.startswith("Context:\n") and "\n\n\nClaim: " in user:
+            # ai_filter's claim layout: "Context:\n[name]: «value»\n\n\nClaim: <question> name"
+            head, claim = user.split("\n\n\nClaim: ", 1)
+            value = re.search(r"«(.*)»", head, re.S).group(1)
+            label = re.match(r"Context:\n\[(.*?)\]: «", head)
+            question = claim[: -len(label.group(1)) - 1] if label and claim.endswith(" " + label.group(1)) else claim
+            return json.dumps({"result": filter_answer(question, value)})
         text, suffix = _strip_suffix(user)
         question, value = self._split(text)
         if '"boolean"' in schema:
@@ -89,9 +97,10 @@ class ShadowModel:
         return json.dumps({"result": complete_answer(question, suffix, value)})
 
     def _split(self, text: str) -> tuple[str, str]:
-        for p in self.prefixes:  # p = '<question> <name>: '
-            if text.startswith(p):
-                return p[: p[:-2].rfind(" ")], text[len(p):]
+        """(question, value) of a SWAN-AISQL '<question> <name>: <value>' prompt."""
+        for prefix, question in self.prefixes:
+            if text.startswith(prefix):
+                return question, text[len(prefix):]
         return text, ""
 
     # BlendSQL: few-shot blocks, the last one is the real question

@@ -110,7 +110,7 @@ class AISQLSystem:
             raise SystemExit("pass --duckdb-bin (or set SWAN_AISQL_DUCKDB) to the SWAN-AISQL duckdb binary")
         self.model, self.endpoint, self.mock, self.timeout = model, endpoint, mock, timeout
         self.settings = settings or {}
-        self.api_key = api_key  # sent as a Bearer header; the meter forwards it (e.g. to https://api.openai.com)
+        self.api_key = api_key  # sent as a Bearer header, which the meter forwards to the endpoint
         self._usage: dict = {}
 
     def _preamble(self) -> str:

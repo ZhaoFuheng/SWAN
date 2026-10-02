@@ -1,61 +1,68 @@
 qid,db,question,evidence,difficulty,shape,gold_sql
-formula_1-00,formula_1,Please list the year and the country of every race held on circuits in Shanghai.,Shanghai is the location of a circuit; the country is the circuit's country.,simple,plain,"SELECT T2.year, T1.country FROM circuits AS T1 INNER JOIN races AS T2 ON T2.circuitId = T1.circuitId
+formula_1-00,formula_1,Please list the year and the country of every race held on circuits in Shanghai.,Shanghai is the location of a circuit; the country is the circuit's country.,simple,plain,"SELECT DISTINCT T2.year, T1.country FROM circuits AS T1 INNER JOIN races AS T2 ON T2.circuitId = T1.circuitId
 WHERE T1.location = 'Shanghai'"
 formula_1-01,formula_1,Where can the introduction of the races held on Circuit de Barcelona-Catalunya be found?,introduction of races refers to the circuit's url; Circuit de Barcelona-Catalunya is a name of circuit;,simple,plain,"SELECT DISTINCT T1.url FROM circuits AS T1 INNER JOIN races AS T2 ON T2.circuitId = T1.circuitId
 WHERE T1.name = 'Circuit de Barcelona-Catalunya'"
-formula_1-02,formula_1,List any 5 races (year and name) held on circuits in Germany.,Germany is the circuit's country;,simple,any_k,"SELECT T2.year, T2.name FROM circuits AS T1 INNER JOIN races AS T2 ON T2.circuitId = T1.circuitId
+formula_1-02,formula_1,List any 5 races (year and name) held on circuits in Germany.,Germany is the circuit's country;,simple,any_k,"SELECT DISTINCT T2.year, T2.name FROM circuits AS T1 INNER JOIN races AS T2 ON T2.circuitId = T1.circuitId
 WHERE T1.country = 'Germany'"
-formula_1-03,formula_1,How many races in the year 2010 were held on circuits in North or South America?,"North or South America refers to the circuit's country being USA, Canada, Mexico, Brazil or Argentina;",moderate,cheap_after,"SELECT COUNT(T2.raceId) FROM circuits AS T1 INNER JOIN races AS T2 ON T2.circuitId = T1.circuitId
+formula_1-03,formula_1,How many races in the year 2010 were held on circuits in North or South America?,"North or South America refers to the circuit's country being USA, Canada, Mexico, Brazil or Argentina; a race is identified by its name and year;",moderate,cheap_after,"SELECT COUNT(DISTINCT T2.name || '|' || T2.year) FROM circuits AS T1 INNER JOIN races AS T2 ON T2.circuitId = T1.circuitId
 WHERE T1.country IN ('USA', 'Canada', 'Mexico', 'Brazil', 'Argentina') AND T2.year = 2010"
-formula_1-04,formula_1,"Since 2010, how many times did a driver finish a race held on a circuit in Spain?",finishing a race refers to results.time is not null; since 2010 refers to year >= 2010; Spain is the circuit's country;,moderate,join_fanout,"SELECT COUNT(*) FROM results AS T1 INNER JOIN races AS T2 ON T2.raceId = T1.raceId
+formula_1-04,formula_1,"Since 2010, how many times did a driver finish a race held on a circuit in Spain?",finishing a race refers to results.time is not null; a finish is one driver's (identified by forename and surname) in one race; since 2010 refers to year >= 2010; Spain is the circuit's country;,moderate,join_fanout,"SELECT COUNT(DISTINCT T4.forename || '|' || T4.surname || '|' || T1.raceId) FROM results AS T1 INNER JOIN races AS T2 ON T2.raceId = T1.raceId
 INNER JOIN circuits AS T3 ON T3.circuitId = T2.circuitId
+INNER JOIN drivers AS T4 ON T4.driverId = T1.driverId
 WHERE T2.year >= 2010 AND T1.time IS NOT NULL AND T3.country = 'Spain'"
-formula_1-05,formula_1,Name any 3 circuits located in the southern hemisphere.,southern hemisphere refers to lat < 0;,simple,any_k,SELECT name FROM circuits WHERE lat < 0
+formula_1-05,formula_1,Name any 3 circuits located in the southern hemisphere.,southern hemisphere refers to lat < 0;,simple,any_k,SELECT DISTINCT name FROM circuits WHERE lat < 0
 formula_1-06,formula_1,"For each year a race was held on Sepang International Circuit, give the year and the circuit's information page.",information page refers to the circuit's url;,simple,plain,"SELECT DISTINCT T2.year, T1.url FROM circuits AS T1 INNER JOIN races AS T2 ON T2.circuitId = T1.circuitId
 WHERE T1.name = 'Sepang International Circuit'"
 formula_1-07,formula_1,"Which circuits that hosted a race lie north of 45 degrees latitude and east of the prime meridian, outside Germany?",north of 45 degrees latitude refers to lat > 45; east of the prime meridian refers to lng > 0; outside Germany refers to country <> 'Germany';,moderate,multi_filter,"SELECT DISTINCT T1.name FROM circuits AS T1 INNER JOIN races AS T2 ON T2.circuitId = T1.circuitId
 WHERE T1.lat > 45 AND T1.lng > 0 AND T1.country <> 'Germany'"
-formula_1-08,formula_1,"For the race results of the 2008 season, count the results by the nationality of the constructor for the cars that finished the race; count the cars that did not finish together under an empty nationality.",finishing the race refers to results.time is not null; nationality refers to constructors.nationality;,moderate,case,"SELECT CASE WHEN T1.time IS NOT NULL THEN T3.nationality END AS constructor_nationality, COUNT(*)
+formula_1-08,formula_1,"For the race results of the 2008 season, count the results by the nationality of the constructor for the cars that finished the race; count the cars that did not finish together under an empty nationality.",finishing the race refers to results.time is not null; a result is one driver's (identified by forename and surname) in one race; nationality refers to constructors.nationality;,moderate,case,"SELECT CASE WHEN T1.time IS NOT NULL THEN T3.nationality END AS constructor_nationality,
+    COUNT(DISTINCT T4.forename || '|' || T4.surname || '|' || T1.raceId)
 FROM results AS T1 INNER JOIN races AS T2 ON T2.raceId = T1.raceId
 INNER JOIN constructors AS T3 ON T3.constructorId = T1.constructorId
+INNER JOIN drivers AS T4 ON T4.driverId = T1.driverId
 WHERE T2.year = 2008
 GROUP BY CASE WHEN T1.time IS NOT NULL THEN T3.nationality END"
-formula_1-09,formula_1,Which drivers born in 1980 or later are British and have an official three-letter driver code?,born in 1980 or later refers to year(dob) >= 1980; British refers to nationality = 'British'; having a driver code refers to code is not null;,moderate,multi_filter,"SELECT forename, surname FROM drivers
+formula_1-09,formula_1,Which drivers born in 1980 or later are British and have an official three-letter driver code?,born in 1980 or later refers to year(dob) >= 1980; British refers to nationality = 'British'; having a driver code refers to code is not null;,moderate,multi_filter,"SELECT DISTINCT forename, surname FROM drivers
 WHERE dob >= '1980-01-01' AND nationality = 'British' AND code IS NOT NULL"
 formula_1-10,formula_1,Show me the information page of the race No. 901.,race number refers to raceId; information page refers to races.url;,simple,plain,SELECT url FROM races WHERE raceId = 901
-formula_1-11,formula_1,"For the drivers classified in the top 10 of race No. 872, list their name and position, and give the date of birth of those who finished on the lead lap.",race number refers to raceId; top 10 refers to position <= 10; finishing on the lead lap refers to results.time is not null; date of birth refers to dob;,moderate,case,"SELECT T1.forename, T1.surname, T2.position, CASE WHEN T2.time IS NOT NULL THEN T1.dob END
+formula_1-11,formula_1,"For the drivers classified in the top 10 of race No. 872, list their name and position, and give the date of birth of those who finished on the lead lap.",race number refers to raceId; top 10 refers to position <= 10; finishing on the lead lap refers to results.time is not null; date of birth refers to dob;,moderate,case,"SELECT DISTINCT T1.forename, T1.surname, T2.position, CASE WHEN T2.time IS NOT NULL THEN T1.dob END
 FROM drivers AS T1 INNER JOIN results AS T2 ON T2.driverId = T1.driverId
 WHERE T2.raceId = 872 AND T2.position <= 10"
 formula_1-12,formula_1,Who were the drivers that got a lap time of 0:01:27 in the race No. 161? Show their introduction websites.,race number refers to raceId; introduction website of the drivers refers to url; lap time of 0:01:27 refers to lapTimes.time LIKE '1:27%';,moderate,plain,"SELECT DISTINCT T2.forename, T2.surname, T2.url FROM lapTimes AS T1 INNER JOIN drivers AS T2 ON T2.driverId = T1.driverId
 WHERE T1.raceId = 161 AND T1.time LIKE '1:27%'"
-formula_1-13,formula_1,"For the 5 fastest lap speeds recorded in the 2015 season, give the race, the driver and the driver's nationality.",fastest lap speed refers to results.fastestLapSpeed; ties are broken by resultId;,moderate,top_n,"SELECT T3.name, T1.forename, T1.surname, T1.nationality
-FROM drivers AS T1 INNER JOIN results AS T2 ON T2.driverId = T1.driverId
-INNER JOIN races AS T3 ON T3.raceId = T2.raceId
-WHERE T3.year = 2015 AND T2.fastestLapSpeed IS NOT NULL
-ORDER BY CAST(T2.fastestLapSpeed AS REAL) DESC, T2.resultId
+formula_1-13,formula_1,"For the 5 fastest lap speeds recorded in the 2015 season, give the race, the driver and the driver's nationality.","fastest lap speed refers to results.fastestLapSpeed; a lap speed is one driver's (identified by forename and surname) in one race; ties are broken by the race name, then the driver's forename and surname;",moderate,top_n,"SELECT race_name, forename, surname, nationality FROM (
+  SELECT DISTINCT T3.name AS race_name, T1.forename, T1.surname, T1.nationality, CAST(T2.fastestLapSpeed AS REAL) AS speed
+  FROM drivers AS T1 INNER JOIN results AS T2 ON T2.driverId = T1.driverId
+  INNER JOIN races AS T3 ON T3.raceId = T2.raceId
+  WHERE T3.year = 2015 AND T2.fastestLapSpeed IS NOT NULL)
+ORDER BY speed DESC, race_name, forename, surname
 LIMIT 5"
 formula_1-14,formula_1,Which constructors had a Brazilian driver in a race from 2012 onwards?,Brazilian refers to drivers.nationality = 'Brazilian'; from 2012 onwards refers to year >= 2012;,moderate,distinct_exists,"SELECT DISTINCT T4.name FROM results AS T1 INNER JOIN races AS T2 ON T2.raceId = T1.raceId
 INNER JOIN drivers AS T3 ON T3.driverId = T1.driverId
 INNER JOIN constructors AS T4 ON T4.constructorId = T1.constructorId
 WHERE T2.year >= 2012 AND T3.nationality = 'Brazilian'"
-formula_1-15,formula_1,"Which drivers who finished race No. 872 were born in 1985 or later, are European, and are not German?",race number refers to raceId; finished refers to results.time is not null; born in 1985 or later refers to dob >= '1985-01-01'; European refers to a nationality of a European country;,moderate,multi_filter,"SELECT T1.forename, T1.surname FROM drivers AS T1 INNER JOIN results AS T2 ON T2.driverId = T1.driverId
+formula_1-15,formula_1,"Which drivers who finished race No. 872 were born in 1985 or later, are European, and are not German?","race number refers to raceId; finished refers to results.time is not null; born in 1985 or later refers to dob >= '1985-01-01'; European refers to nationality in ('British', 'German', 'French', 'Spanish', 'Finnish', 'Italian', 'Belgian', 'Dutch', 'Swiss', 'Russian', 'Danish', 'Swedish', 'Austrian', 'Polish', 'Portuguese', 'Monegasque', 'Irish', 'Czech', 'Hungarian', 'Liechtensteiner', 'East German');",moderate,multi_filter,"SELECT DISTINCT T1.forename, T1.surname FROM drivers AS T1 INNER JOIN results AS T2 ON T2.driverId = T1.driverId
 WHERE T2.raceId = 872 AND T2.time IS NOT NULL AND T1.dob >= '1985-01-01'
-  AND T1.nationality IN ('British', 'German', 'French', 'Spanish', 'Finnish', 'Italian', 'Belgian', 'Dutch', 'Swiss', 'Russian', 'Danish', 'Swedish', 'Austrian', 'Polish', 'Portuguese')
+  AND T1.nationality IN ('British', 'German', 'French', 'Spanish', 'Finnish', 'Italian', 'Belgian', 'Dutch', 'Swiss', 'Russian', 'Danish', 'Swedish', 'Austrian', 'Polish', 'Portuguese', 'Monegasque', 'Irish', 'Czech', 'Hungarian', 'Liechtensteiner', 'East German')
   AND T1.nationality <> 'German'"
-formula_1-16,formula_1,"For the drivers who took part in the races held in May 1983, what's their race completion rate?",completion rate = COUNT(results where time is not null) * 100 / COUNT(results); May 1983 refers to date LIKE '1983-05%';,moderate,cheap_after,"SELECT CAST(COUNT(CASE WHEN T2.time IS NOT NULL THEN T2.driverId END) AS REAL) * 100 / COUNT(T2.driverId)
+formula_1-16,formula_1,"For the drivers who took part in the races held in May 1983, what's their race completion rate?",completion rate = COUNT(DISTINCT race entries where time is not null) * 100 / COUNT(DISTINCT race entries); a race entry is one driver's (identified by forename and surname) in one race; May 1983 refers to date LIKE '1983-05%';,moderate,cheap_after,"SELECT CAST(COUNT(DISTINCT CASE WHEN T2.time IS NOT NULL THEN T3.forename || '|' || T3.surname || '|' || T2.raceId END) AS REAL) * 100
+       / COUNT(DISTINCT T3.forename || '|' || T3.surname || '|' || T2.raceId)
 FROM races AS T1 INNER JOIN results AS T2 ON T2.raceId = T1.raceId
+INNER JOIN drivers AS T3 ON T3.driverId = T2.driverId
 WHERE T1.date LIKE '1983-05%'"
 formula_1-17,formula_1,Which circuits outside the USA lie either in the southern hemisphere or west of 30 degrees west longitude?,southern hemisphere refers to lat < 0; west of 30 degrees west refers to lng < -30; outside the USA refers to country <> 'USA';,moderate,boolean,SELECT DISTINCT name FROM circuits WHERE (lat < 0 OR lng < -30) AND country <> 'USA'
-formula_1-18,formula_1,"For the 5 highest constructor standing point totals in the 2009 season, give the constructor, the points and the constructor's introduction website.",introduction website of the constructor refers to url; ties are broken by constructorStandingsId;,moderate,top_n,"SELECT T3.name, T1.points, T3.url FROM constructorStandings AS T1 INNER JOIN races AS T2 ON T2.raceId = T1.raceId
+formula_1-18,formula_1,"For the 5 highest constructor standing point totals in the 2009 season, give the constructor, the points and the constructor's introduction website.","introduction website of the constructor refers to url; a standing is one constructor's after one race; ties are broken by the constructor's name, then the race name;",moderate,top_n,"SELECT T3.name, T1.points, T3.url FROM constructorStandings AS T1 INNER JOIN races AS T2 ON T2.raceId = T1.raceId
 INNER JOIN constructors AS T3 ON T3.constructorId = T1.constructorId
 WHERE T2.year = 2009
-ORDER BY T1.points DESC, T1.constructorStandingsId
+ORDER BY T1.points DESC, T3.name, T2.name
 LIMIT 5"
 formula_1-19,formula_1,Which Finnish or Danish drivers took part in qualifying in 2016? Give their names and abbreviated codes.,Finnish or Danish refers to nationality; abbreviated code refers to drivers.code;,moderate,boolean,"SELECT DISTINCT forename, surname, code FROM drivers
 WHERE driverId IN (SELECT T1.driverId FROM qualifying AS T1 INNER JOIN races AS T2 ON T2.raceId = T1.raceId WHERE T2.year = 2016)
   AND (nationality = 'Finnish' OR nationality = 'Danish')"
-formula_1-20,formula_1,List the name and the information page of every race of the 2017 season.,information page refers to races.url;,simple,plain,"SELECT name, url FROM races WHERE year = 2017"
-formula_1-21,formula_1,"For the races held in November 2015, how many times did a driver finish the race?",finishing refers to results.time is not null; November 2015 refers to date LIKE '2015-11%';,simple,cheap_after,"SELECT COUNT(T2.driverId) FROM races AS T1 INNER JOIN results AS T2 ON T2.raceId = T1.raceId
+formula_1-20,formula_1,List the name and the information page of every race of the 2017 season.,information page refers to races.url;,simple,plain,"SELECT DISTINCT name, url FROM races WHERE year = 2017"
+formula_1-21,formula_1,"For the races held in November 2015, how many times did a driver finish the race?",finishing refers to results.time is not null; a finish is one driver's (identified by forename and surname) in one race; November 2015 refers to date LIKE '2015-11%';,simple,cheap_after,"SELECT COUNT(DISTINCT T3.forename || '|' || T3.surname || '|' || T2.raceId) FROM races AS T1 INNER JOIN results AS T2 ON T2.raceId = T1.raceId
+INNER JOIN drivers AS T3 ON T3.driverId = T2.driverId
 WHERE T1.date LIKE '2015-11%' AND T2.time IS NOT NULL"
 formula_1-22,formula_1,"Since 2014, which German driver set the highest fastest lap speed in a race, and what was the speed?",since 2014 refers to year >= 2014; German refers to nationality = 'German'; ties are broken by the driver's name;,moderate,join_fanout,"SELECT T1.forename, T1.surname, CAST(T2.fastestLapSpeed AS REAL) AS speed
 FROM drivers AS T1 INNER JOIN results AS T2 ON T2.driverId = T1.driverId
@@ -65,15 +72,15 @@ ORDER BY speed DESC, T1.forename, T1.surname
 LIMIT 1"
 formula_1-23,formula_1,Which races of the 1958 season were held in the same month as the season's first race?,the first race refers to min(date) of 1958; the month refers to the month of races.date;,moderate,cte_reuse,"SELECT DISTINCT name FROM races
 WHERE year = 1958 AND STRFTIME('%m', date) = (SELECT MIN(STRFTIME('%m', date)) FROM races WHERE year = 1958)"
-formula_1-24,formula_1,State the name and date of the 5 latest races held before the year 2000 that have recorded results.,"latest refers to the highest year, then the highest round; recorded results refers to the race appearing in results; ties are broken by raceId;",simple,top_n,"SELECT name, date FROM races WHERE year < 2000 AND raceId IN (SELECT raceId FROM results)
-ORDER BY year DESC, round DESC, raceId LIMIT 5"
+formula_1-24,formula_1,State the name and date of the 5 latest races held before the year 2000 that have recorded results.,"latest refers to the highest year, then the highest round (year and round identify a race); recorded results refers to the race appearing in results;",simple,top_n,"SELECT name, date FROM races WHERE year < 2000 AND raceId IN (SELECT raceId FROM results)
+ORDER BY year DESC, round DESC LIMIT 5"
 formula_1-25,formula_1,"Between 1980 and 1999, in which years was a race held in July on a circuit in the UK located north of 51.5 degrees latitude? Give the year and the race name.",held in July refers to the month of races.date; in the UK refers to circuits.country = 'UK'; north of 51.5 degrees latitude refers to circuits.lat > 51.5;,challenging,multi_filter,"SELECT DISTINCT T2.year, T2.name FROM circuits AS T1 INNER JOIN races AS T2 ON T2.circuitId = T1.circuitId
 WHERE T2.year BETWEEN 1980 AND 1999 AND STRFTIME('%m', T2.date) = '07' AND T1.country = 'UK' AND T1.lat > 51.5"
 formula_1-26,formula_1,Which drivers led the drivers' championship standings after some race from 2000 onwards? Give their names and nationalities.,leading the standings refers to driverStandings.position = 1; from 2000 onwards refers to year >= 2000;,moderate,join_fanout,"SELECT DISTINCT T1.forename, T1.surname, T1.nationality
 FROM drivers AS T1 INNER JOIN driverStandings AS T2 ON T2.driverId = T1.driverId
 INNER JOIN races AS T3 ON T3.raceId = T2.raceId
 WHERE T3.year >= 2000 AND T2.position = 1"
-formula_1-27,formula_1,Name any 5 Japanese drivers.,Japanese refers to nationality = 'Japanese';,simple,any_k,"SELECT forename, surname FROM drivers WHERE nationality = 'Japanese'"
+formula_1-27,formula_1,Name any 5 Japanese drivers.,Japanese refers to nationality = 'Japanese';,simple,any_k,"SELECT DISTINCT forename, surname FROM drivers WHERE nationality = 'Japanese'"
 formula_1-28,formula_1,"Which circuits hosted a race in June, July or August both in 1990-1994 and in 1995-1999?","June, July or August refers to the month of races.date; 1990-1994 refers to year between 1990 and 1994; 1995-1999 refers to year between 1995 and 1999;",challenging,cte_reuse,"SELECT DISTINCT T1.name FROM circuits AS T1
 WHERE T1.circuitId IN (SELECT circuitId FROM races WHERE year BETWEEN 1990 AND 1994 AND STRFTIME('%m', date) IN ('06', '07', '08'))
   AND T1.circuitId IN (SELECT circuitId FROM races WHERE year BETWEEN 1995 AND 1999 AND STRFTIME('%m', date) IN ('06', '07', '08'))"

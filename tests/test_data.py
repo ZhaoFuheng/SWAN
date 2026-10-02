@@ -7,7 +7,7 @@ import pytest
 
 from swan_bench import paths
 from swan_bench.aisql import lint
-from swan_bench.data import load_masked_columns, load_query, load_questions, load_table_keys, query_path
+from swan_bench.data import load_masked_columns, load_query, load_questions, query_path
 
 
 def test_questions():
@@ -44,7 +44,6 @@ def test_every_aisql_query_is_in_prompt_form():
 
 def test_metadata_covers_every_database():
     assert set(load_masked_columns()) == set(paths.DATABASES)
-    assert set(load_table_keys()) == set(paths.DATABASES)
 
 
 @pytest.fixture(scope="module")

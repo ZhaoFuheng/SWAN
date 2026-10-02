@@ -2,10 +2,10 @@
 
 | AISQL | BlendSQL |
 |---|---|
-| `ai_filter('Q name: ' \|\| t.name)` | `{{LLMMap('Q', t.name)}} = TRUE` (no parentheses: BlendSQL then loses the alias) |
+| `ai_filter('Context:\n[name]: «' \|\| t.name \|\| '»\n\n\nClaim: Q name')` | `{{LLMMap('Q', t.name)}} = TRUE` (no parentheses: BlendSQL then loses the alias) |
 | `NOT ai_filter(...)` | `{{LLMMap('Q', t.name)}} = FALSE` |
-| `ai_complete('Q name: ' \\|\\| t.name \\|\\| ' S')` | `{{LLMMap('Q S', t.name, return_type='str')}}` |
-| `ai_classify('Q name: ' \\|\\| t.name, ['A', 'B'])` | `{{LLMMap('Q', t.name, options=('A', 'B'))}}` |
+| `ai_complete('Q name: ' \|\| t.name \|\| ' S')` | `{{LLMMap('Q S', t.name, return_type='str')}}` |
+| `ai_classify('Q name: ' \|\| t.name, ['A', 'B'])` | `{{LLMMap('Q', t.name, options=('A', 'B'))}}` |
 | `ai_classify(..., (SELECT list(DISTINCT c ORDER BY c) FROM u))` | `{{LLMMap('Q', t.name, options=u.c)}}` |
 | `(SELECT ai_agg(list(t.name), 'I') FROM ... WHERE ...)` | `{{LLMQA('I', (SELECT t.name FROM ... WHERE ...))}}` |
 

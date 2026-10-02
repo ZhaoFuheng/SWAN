@@ -1,4 +1,4 @@
-SELECT COUNT(*)
+SELECT COUNT(DISTINCT T1.superhero_name)
 FROM superhero AS T1
 WHERE T1.alignment_id = (SELECT id FROM alignment WHERE alignment = 'Good')
   AND T1.publisher_id = (SELECT id FROM publisher WHERE publisher_name = 'Marvel Comics')

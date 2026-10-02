@@ -1,5 +1,5 @@
 WITH m AS (
-    SELECT "Match".id, "Match".season, "Match".stage, SUBSTR("Match".date, 1, 10) AS match_day,
+    SELECT DISTINCT "Match".season, "Match".stage, SUBSTR("Match".date, 1, 10) AS match_day,
            home.team_long_name AS home_team, away.team_long_name AS away_team,
            'Home team: ' || home.team_long_name || ', Away team: ' || away.team_long_name
                || ', Date: ' || SUBSTR("Match".date, 1, 10) AS match_key,

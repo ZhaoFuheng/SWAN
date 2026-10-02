@@ -6,7 +6,7 @@ s AS (
     SELECT *, School || ', ' || Street || ', ' || State || ' ' || Zip AS school_address
     FROM schools
 )
-SELECT COUNT(*)
+SELECT COUNT(DISTINCT substr(s.CDSCode, 1, 14))
 FROM satscores AS T1 INNER JOIN s ON T1.cds = s.CDSCode INNER JOIN f ON f.CDSCode = s.CDSCode
 WHERE T1.AvgScrMath > 560
   AND f."Charter School (Y/N)" = 1

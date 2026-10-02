@@ -7,10 +7,6 @@ from pathlib import Path
 
 from . import paths
 
-#: The query kinds under `queries/<kind>/<qid>.sql`: the AISQL query every system runs, and its oracle.
-QUERY_KINDS = ("aisql", "oracle")
-
-
 @dataclass(frozen=True)
 class Question:
     qid: str
@@ -33,6 +29,7 @@ def load_questions(db: str | None = None) -> list[Question]:
 
 
 def query_path(kind: str, qid: str) -> Path:
+    """`queries/<kind>/<qid>.sql`: kind is "aisql" (the query every system runs) or "oracle"."""
     return paths.QUERIES / kind / f"{qid}.sql"
 
 
@@ -45,7 +42,3 @@ def load_masked_columns() -> dict[str, dict[str, list[str]]]:
     """database -> table -> columns hidden from the system under test."""
     return json.load(open(paths.MASKED_COLUMNS_JSON))
 
-
-def load_table_keys() -> dict[str, dict[str, list[str]]]:
-    """database -> table -> columns that identify a row to the LLM."""
-    return json.load(open(paths.TABLE_KEYS_JSON))

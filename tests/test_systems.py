@@ -7,7 +7,8 @@ import pytest
 from swan_bench import paths
 from swan_bench.data import load_query, load_questions
 from swan_bench.systems.aisql import _json_rows, duckdb_type
-from swan_bench.systems.lotus import rows_of
+from swan_bench.systems.blendsql import _zero_shot
+from swan_bench.lotus_exec import rows_of
 
 
 def test_sqlite_affinity_maps_to_duckdb_types():
@@ -64,3 +65,12 @@ def test_aisql_query_runs_on_masked_database(question):
 def test_numeric_text_becomes_a_number():
     from swan_bench.systems.aisql import _numeric
     assert _numeric("3") == 3 and _numeric("1.5") == 1.5 and _numeric(None) is None and _numeric(2) == 2
+
+
+def test_blendsql_prompt_loses_its_one_shot_example():
+    prompt = ("You are a helpful assistant. Output 'True' or 'False'. An example is shown below.\n\n"
+              "QUESTION:\nIs this city in the California Bay Area?\n\nCONTEXT:\n{\"city\": \"San Jose\"}\n\n"
+              "ANSWER:\nTrue\n\n---\n\nQUESTION:\nIs this player tall?\n\nCONTEXT:\n{\"name\": \"Ross\"}\n\nANSWER:\n")
+    assert _zero_shot(prompt) == ("You are a helpful assistant. Output 'True' or 'False'.\n\n"
+                                  "QUESTION:\nIs this player tall?\n\nCONTEXT:\n{\"name\": \"Ross\"}\n\nANSWER:\n")
+    assert _zero_shot("no example here") == "no example here"

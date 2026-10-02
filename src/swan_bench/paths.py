@@ -13,7 +13,6 @@ ROOT = Path(os.environ.get("SWAN_BENCH_ROOT", Path(__file__).resolve().parents[2
 DATA = ROOT / "data"
 QUESTIONS_DIR = DATA / "questions"  # one CSV per database
 MASKED_COLUMNS_JSON = DATA / "masked_columns.json"
-TABLE_KEYS_JSON = DATA / "table_keys.json"
 QUERIES = ROOT / "queries"
 
 SWAN2_CONFIG = DATA / "swan2.json"
@@ -23,7 +22,6 @@ BIRD_DIR = DATA / "databases" / "bird"
 ORIGINAL_DIR = DATA / "databases" / "original"
 MASKED_DIR = DATA / "databases" / "masked"
 
-RESULTS = ROOT / "results"
 RUNS = ROOT / "runs"
 
 

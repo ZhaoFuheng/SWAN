@@ -1,9 +1,10 @@
-"""The systems under test. Each runs its own query for a question on the MASKED database and returns rows.
+"""The systems under test. Each runs the question's AISQL query on the MASKED database and returns rows:
+SWAN-AISQL as written, BlendSQL and LOTUS through their mechanical translations.
 
-A system is a class with a `name` (its directory under `queries/`), a constructor taking the model name,
-the OpenAI-compatible endpoint the runner hands it (the meter) and system options, and
-`execute(question, query) -> list[tuple]`. Optionally `close()` and `last_usage() -> dict` (the system's
-own accounting of the query it just ran).
+A system is a class with a `name` (its directory under `runs/`), a constructor taking the model name, the
+OpenAI-compatible endpoint the runner hands it (the meter) and keyword options (`api_key`, `concurrency`,
+and the system's own), and `execute(question, query) -> list[tuple]`. Optionally `close()` and
+`last_usage() -> dict` (the system's own accounting of the query it just ran).
 """
 
 SYSTEMS = ("blendsql", "lotus", "aisql")

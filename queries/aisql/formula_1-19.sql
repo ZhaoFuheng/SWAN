@@ -8,5 +8,13 @@ SELECT DISTINCT driver_data.forename, driver_data.surname,
 FROM driver_data
 WHERE driver_data.driverId IN (SELECT qualifying.driverId FROM qualifying
                                INNER JOIN races ON races.raceId = qualifying.raceId WHERE races.year = 2016)
-  AND (ai_filter('Is this Formula 1 driver Finnish? driver: ' || driver_data.driver)
-       OR ai_filter('Is this Formula 1 driver Danish? driver: ' || driver_data.driver))
+  AND (ai_filter('Context:
+[driver]: «' || driver_data.driver || '»
+
+
+Claim: Is this Formula 1 driver Finnish? driver')
+       OR ai_filter('Context:
+[driver]: «' || driver_data.driver || '»
+
+
+Claim: Is this Formula 1 driver Danish? driver'))

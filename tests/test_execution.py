@@ -24,3 +24,12 @@ def test_floats_compare_to_ten_significant_digits():
     assert results_match([(5.0,)], [(5,)], ordered=False)
     assert not results_match([(0.3001,)], [(0.3,)], ordered=False)
     assert results_match([(float("nan"),)], [(None,)], ordered=False)
+
+
+def test_urls_compare_without_scheme_www_encoding_or_trailing_slash():
+    assert results_match([("https://en.wikipedia.org/wiki/Mika_Häkkinen",)],
+                         [("http://en.wikipedia.org/wiki/Mika_H%C3%A4kkinen",)], ordered=False)
+    assert results_match([("https://www.Edline.net/pages/artesia_high_school/",)],
+                         [("www.edline.net/pages/artesia_high_school",)], ordered=False)
+    assert not results_match([("http://en.wikipedia.org/wiki/Monza",)], [("http://en.wikipedia.org/wiki/Imola",)], ordered=False)
+    assert results_match([("plain text",)], [("plain text",)], ordered=False)

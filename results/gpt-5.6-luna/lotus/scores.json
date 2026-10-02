@@ -1,0 +1,85 @@
+{
+  "system": "lotus",
+  "model": "gpt-5.6-luna",
+  "endpoint": "http://localhost:4021",
+  "options": {
+    "concurrency": 20
+  },
+  "databases": {
+    "california_schools": {
+      "correct": 12,
+      "total": 30,
+      "failed": 0,
+      "accuracy": 0.4,
+      "quality": 0.7521,
+      "requests": 18161,
+      "fresh_calls": 3051,
+      "errors": 0,
+      "prompt_tokens": 1881094,
+      "completion_tokens": 683965,
+      "reasoning_tokens": 523940,
+      "cost_usd": 1.196978,
+      "seconds": 396.83
+    },
+    "superhero": {
+      "correct": 7,
+      "total": 30,
+      "failed": 0,
+      "accuracy": 0.2333,
+      "quality": 0.5085,
+      "requests": 23522,
+      "fresh_calls": 3248,
+      "errors": 0,
+      "prompt_tokens": 2122359,
+      "completion_tokens": 804337,
+      "reasoning_tokens": 602508,
+      "cost_usd": 1.389679,
+      "seconds": 404.59
+    },
+    "formula_1": {
+      "correct": 26,
+      "total": 30,
+      "failed": 0,
+      "accuracy": 0.8667,
+      "quality": 0.9834,
+      "requests": 14705,
+      "fresh_calls": 2024,
+      "errors": 0,
+      "prompt_tokens": 1312151,
+      "completion_tokens": 311211,
+      "reasoning_tokens": 179254,
+      "cost_usd": 0.635881,
+      "seconds": 264.24
+    },
+    "european_football_2": {
+      "correct": 14,
+      "total": 30,
+      "failed": 0,
+      "accuracy": 0.4667,
+      "quality": 0.8364,
+      "requests": 13090,
+      "fresh_calls": 3869,
+      "errors": 0,
+      "prompt_tokens": 1236082,
+      "completion_tokens": 594644,
+      "reasoning_tokens": 469926,
+      "cost_usd": 0.960788,
+      "seconds": 347.45
+    }
+  },
+  "overall": {
+    "correct": 59,
+    "total": 120,
+    "failed": 0,
+    "accuracy": 0.4917,
+    "quality": 0.7701,
+    "requests": 69478,
+    "fresh_calls": 12192,
+    "errors": 0,
+    "prompt_tokens": 6551686,
+    "completion_tokens": 2394157,
+    "reasoning_tokens": 1775628,
+    "cost_usd": 4.183326,
+    "seconds": 1413.11
+  }
+}

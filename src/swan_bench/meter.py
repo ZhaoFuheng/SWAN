@@ -30,10 +30,11 @@ COUNTERS = ("requests", "errors", "prompt_tokens", "completion_tokens", "reasoni
 
 
 def _stub_completion(body: dict, responder=None) -> dict:
-    text = json.dumps(body.get("messages", ""), sort_keys=True)
-    answer = "True" if hashlib.sha256(text.encode()).digest()[0] % 2 == 0 else "False"
     if responder is not None:
         answer = responder(body)
+    else:
+        text = json.dumps(body.get("messages", ""), sort_keys=True)
+        answer = "True" if hashlib.sha256(text.encode()).digest()[0] % 2 == 0 else "False"
     return {
         "id": "stub", "object": "chat.completion", "created": int(time.time()), "model": body.get("model", "stub"),
         "choices": [{"index": 0, "finish_reason": "stop", "message": {"role": "assistant", "content": answer}}],

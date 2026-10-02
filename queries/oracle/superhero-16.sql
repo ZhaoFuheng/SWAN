@@ -1,4 +1,4 @@
-SELECT COUNT(*)
+SELECT COUNT(DISTINCT T1.superhero_name)
 FROM superhero AS T1
 WHERE T1.weight_kg > 80
   AND T1.gender_id = (SELECT id FROM gender WHERE gender = 'Male')

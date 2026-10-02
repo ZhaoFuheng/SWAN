@@ -10,8 +10,10 @@ from .quality import any_k
 from .shadow import ShadowModel
 
 
-def _prefixes(queries: list[str]) -> list[str]:
-    return [c.prompt_prefix for q in queries for c in ai_calls(parse(q)) if c.fn != "ai_agg"]
+def _prefixes(queries: list[str]) -> dict[str, str]:
+    """prompt prefix -> question, for the calls whose SWAN-AISQL prompt is '<question> <name>: <value>'."""
+    return {c.prompt_prefix: c.question for q in queries for c in ai_calls(parse(q))
+            if c.fn in ("ai_complete", "ai_classify")}
 
 
 def _without_limit(query: str) -> str:
@@ -25,10 +27,10 @@ def canonical(rows: list, ordered: bool):
     return rows if ordered else sorted(rows, key=repr)
 
 
-def check(questions, duckdb_bin: str, systems=("aisql", "blendsql", "lotus"), queries: dict | None = None) -> list[dict]:
+def check(questions, duckdb_bin: str, systems=("aisql", "blendsql", "lotus")) -> list[dict]:
     from .systems import load_system
 
-    queries = queries or {q.qid: load_query("aisql", q.qid) for q in questions}
+    queries = {q.qid: load_query("aisql", q.qid) for q in questions}
     shadow = ShadowModel(_prefixes(list(queries.values())))
     out = []
     with Meter(None, responder=shadow.respond) as meter:

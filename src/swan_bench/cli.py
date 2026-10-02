@@ -6,6 +6,7 @@ import os
 import sys
 
 from . import paths
+from .systems import SYSTEMS
 
 DEFAULT_MODEL = "gpt-5.6-luna"
 DEFAULT_ENDPOINT = "http://localhost:4001"  # the SWAN-AISQL cache proxy
@@ -44,8 +45,6 @@ def _cmd_run(args) -> None:
 
     _load_dotenv()
     options = {"api_key": os.environ.get("OPENAI_API_KEY"), "concurrency": args.concurrency}
-    if args.system == "blendsql":
-        options["shots"] = args.shots
     if args.system == "aisql":
         settings = {"ai_concurrency": args.concurrency, **dict(s.split("=", 1) for s in args.set or [])}
         options.update(duckdb_bin=args.duckdb_bin, mock=args.stub, settings=settings)
@@ -135,7 +134,7 @@ def main(argv: list[str] | None = None) -> None:
     p.set_defaults(func=_cmd_questions)
 
     p = sub.add_parser("run", help="run one system over the benchmark and score it")
-    p.add_argument("--system", required=True, choices=("blendsql", "lotus", "aisql"))
+    p.add_argument("--system", required=True, choices=SYSTEMS)
     p.add_argument("--model", default=DEFAULT_MODEL, help=f"chat model (default {DEFAULT_MODEL})")
     p.add_argument("--endpoint", default=os.environ.get("SWAN_BENCH_ENDPOINT", DEFAULT_ENDPOINT),
                    help="OpenAI-compatible endpoint, normally the SWAN-AISQL cache proxy "
@@ -149,7 +148,6 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--stub", action="store_true",
                    help="no model: a local stub answers (SWAN-AISQL uses its built-in mock); checks the queries run")
     p.add_argument("--concurrency", type=int, default=20, help="LLM requests in flight (default 20, every system)")
-    p.add_argument("--shots", type=int, default=0, help="blendsql: few-shot examples for LLMQA")
     p.add_argument("--duckdb-bin", default=os.environ.get("SWAN_AISQL_DUCKDB"),
                    help="aisql: the SWAN-AISQL duckdb binary (default $SWAN_AISQL_DUCKDB)")
     p.add_argument("--set", action="append", metavar="NAME=VALUE", help="aisql: an extra SET before each query")
@@ -163,11 +161,11 @@ def main(argv: list[str] | None = None) -> None:
     p = sub.add_parser("check", help="run every system on the shadow model; their results must be identical")
     p.add_argument("--db", action="append", choices=paths.DATABASES)
     p.add_argument("--qid", action="append")
-    p.add_argument("--duckdb-bin", default=os.environ.get("SWAN_AISQL_DUCKDB"), required=False)
+    p.add_argument("--duckdb-bin", default=os.environ.get("SWAN_AISQL_DUCKDB"))
     p.set_defaults(func=_cmd_check)
 
     p = sub.add_parser("rescore", help="recompute a finished run's scores from its stored answers")
-    p.add_argument("--system", required=True, choices=("blendsql", "lotus", "aisql"))
+    p.add_argument("--system", required=True, choices=SYSTEMS)
     p.add_argument("--tag", required=True)
     p.set_defaults(func=_cmd_rescore)
 

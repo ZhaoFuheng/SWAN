@@ -3,7 +3,7 @@ WITH s AS (
     FROM schools
 ),
 high_math AS (
-    SELECT T1.AvgScrMath, s.County AS County
+    SELECT DISTINCT substr(s.CDSCode, 1, 14) AS cds, T1.AvgScrMath, s.County AS County
     FROM satscores AS T1 INNER JOIN s ON T1.cds = s.CDSCode
     WHERE T1.AvgScrMath >= 550
 )

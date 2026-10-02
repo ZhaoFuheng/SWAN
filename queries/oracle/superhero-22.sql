@@ -1,4 +1,4 @@
-SELECT COUNT(*)
+SELECT COUNT(DISTINCT superhero.superhero_name)
 FROM superhero
 WHERE superhero.weight_kg > 100
   AND (superhero.publisher_id = (SELECT id FROM publisher WHERE publisher_name = 'DC Comics') OR superhero.publisher_id = (SELECT id FROM publisher WHERE publisher_name = 'Marvel Comics'))

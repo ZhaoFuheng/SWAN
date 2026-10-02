@@ -4,18 +4,22 @@ Every question has one AISQL query (`queries/aisql/<qid>.sql`). SWAN-AISQL runs 
 and LOTUS translators (`translate_blendsql.py`, `systems/lotus.py`) derive their programs from it. For those
 translations to be mechanical, each AI call has one of these forms:
 
-    ai_filter('<question> <name>: ' || <alias>.<name> [|| ' <suffix>'])
+    ai_filter('Context:\n[<name>]: «' || <alias>.<name> || '»\n\n\nClaim: <question> <name>')
     ai_complete('<question> <name>: ' || <alias>.<name> [|| ' <suffix>'])
     ai_classify('<question> <name>: ' || <alias>.<name>, ['<label>', ...])
     ai_classify('<question> <name>: ' || <alias>.<name>, (SELECT list(DISTINCT <col> ORDER BY <col>) FROM <table>))
     ai_agg(list(<alias>.<name>), '<instruction>')
 
-The context is one column; a composite key is built in a CTE first. `<name>` in the literal is that
-column's name, so every system shows the model the same `<name>: <value>` context. The suffix is one of
+The context is one column; a composite key is built in a CTE first. `ai_filter`'s prompt spells out the claim
+layout (`\n` is a newline in the SQL text): the context as `[<name>]: «<value>»`, then `Claim: <question> <name>`.
+The translators read the question and the context column back out of it, so BlendSQL and LOTUS lay them out in
+their own way (QUESTION/CONTEXT, Claim/Context); the layout measured best for SWAN-AISQL's filter. In the other
+calls `<name>` in the literal is the context column's name, so every system shows the model the same
+`<name>: <value>` context. The suffix is one of
 `SUFFIXES`. `ai_agg` appears only as the aggregate of a scalar subquery or of a query without GROUP BY.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import sqlglot
 from sqlglot import exp
@@ -40,7 +44,6 @@ class AICall:
     labels: list[str] | None = None
     labels_from: tuple[str, str] | None = None  # (table, column) of a label subquery
     instruction: str = ""
-    path: list[str] = field(default_factory=list)
 
     @property
     def prompt_prefix(self) -> str:
@@ -57,11 +60,8 @@ def _fn_name(node: exp.Expression) -> str | None:
         return "ai_classify"
     if isinstance(node, exp.AIAgg):
         return "ai_agg"
-    if isinstance(node, exp.AISummarizeAgg):
-        return "ai_summarize_agg"
-    if isinstance(node, exp.Anonymous):
-        name = node.name.lower()
-        return name if name in AI_FUNCTIONS or name.startswith("ai_") else None
+    if isinstance(node, exp.Anonymous) and node.name.lower().startswith("ai_"):
+        return node.name.lower()  # any other ai_* function is rejected by ai_calls
     return None
 
 
@@ -101,6 +101,26 @@ def _prompt(call: AICall, arg: exp.Expression) -> None:
         call.suffix = parts[2].this
 
 
+CLAIM_HEAD, CLAIM_MID = "Context:\n[{name}]: «", "»\n\n\nClaim: "
+CLAIM_FORM = "ai_filter('Context:\\n[<name>]: «' || <alias>.<name> || '»\\n\\n\\nClaim: <question> <name>')"
+
+
+def _claim_prompt(call: AICall, arg: exp.Expression) -> None:
+    """ai_filter's prompt: 'Context:\n[<name>]: «' || <column> || '»\n\n\nClaim: <question> <name>'."""
+    parts = _concat_parts(arg)
+    if len(parts) != 3 or not all(isinstance(p, exp.Literal) and p.is_string for p in (parts[0], parts[2])) \
+            or not isinstance(parts[1], exp.Column):
+        raise AISQLFormError(f"ai_filter: the prompt must be {CLAIM_FORM}")
+    column = parts[1]
+    name = column.meta.get("swan_name", column.name)
+    head, tail = parts[0].this, parts[2].this
+    if head != CLAIM_HEAD.format(name=name) or not tail.startswith(CLAIM_MID) or not tail.endswith(f" {name}"):
+        raise AISQLFormError(f"ai_filter: the prompt must be {CLAIM_FORM}, with <name> the context column's name")
+    call.question, call.name, call.context = tail[len(CLAIM_MID): -len(f" {name}")], name, column
+    if not call.question.strip():
+        raise AISQLFormError("ai_filter: empty question")
+
+
 def ai_calls(tree: exp.Expression) -> list[AICall]:
     """Every AI call in the query, validated, in the order it appears in the text."""
     calls = []
@@ -111,12 +131,14 @@ def ai_calls(tree: exp.Expression) -> list[AICall]:
         if fn not in AI_FUNCTIONS:
             raise AISQLFormError(f"{fn} is not part of the SWAN 2.0 query language ({', '.join(AI_FUNCTIONS)})")
         call, args = AICall(node, fn), _args(node)
-        if fn in ("ai_filter", "ai_complete"):
+        if fn == "ai_filter":
+            if len(args) != 1:
+                raise AISQLFormError("ai_filter takes one prompt")
+            _claim_prompt(call, args[0])
+        elif fn == "ai_complete":
             if len(args) != 1:
                 raise AISQLFormError(f"{fn} takes one argument")
             _prompt(call, args[0])
-            if fn == "ai_filter" and call.suffix:
-                raise AISQLFormError("ai_filter takes no suffix")
         elif fn == "ai_classify":
             if len(args) != 2:
                 raise AISQLFormError("ai_classify takes a prompt and a label list")
