@@ -51,7 +51,9 @@ instead of a model (free, no key, no servers; its answers are meaningless). Resu
 `runs/<system>/<model>/`.
 
 **The cache proxy** records every answer with its cost and latency, and replays them when the same request
-comes again, so a rerun costs nothing and reports the same numbers. `SWAN_BENCH_ENDPOINT=http://localhost:4000`
+comes again, so a rerun costs nothing and reports the same numbers. The recorded answers of all three
+systems on all 120 questions are published with SWAN-AISQL (its `serve/fetch_cache.sh` downloads them from
+Zenodo), so the results in this repository replay without a provider key. `SWAN_BENCH_ENDPOINT=http://localhost:4000`
 uses litellm alone, without recording. litellm is needed either way: it adapts each system's request to the
 model (OpenAI itself rejects some of the parameters BlendSQL and SWAN-AISQL send). Other variables:
 `SWAN_AISQL_DIR` (where SWAN-AISQL is or goes) and `SWAN_AISQL_DUCKDB` (a binary already built).
