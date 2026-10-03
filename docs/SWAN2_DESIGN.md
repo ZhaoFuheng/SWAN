@@ -21,14 +21,15 @@ quality with fewer calls, at lower cost, and sooner.
 | system | what it runs |
 |---|---|
 | SWAN-AISQL | the AISQL query, as written; its optimizer plans the LLM calls, ordering filters with a selectivity model fed by an embedding server |
-| BlendSQL | an automatic translation of the query into BlendSQL (LLM ingredients in sqlite); BlendSQL plans it. Its `LLMMap` prompt is sent without BlendSQL's built-in one-shot example, so all three systems are zero-shot |
+| BlendSQL | an automatic translation of the query into BlendSQL (LLM ingredients in sqlite); BlendSQL plans it. Its `LLMMap` prompt is sent without BlendSQL's built-in one-shot example, so every system is zero-shot |
 | LOTUS | an automatic translation into the LOTUS program that follows the query's written order, with semantic operators over DataFrames; LOTUS has no planner, so the program is its plan |
+| PLOP | an automatic translation into Morrila's `semantic()` dialect (`translate_plop.py`), run on the authors' DuckDB fork in its DP cost-model mode over a parquet export of the databases; PLOP plans it. The fork is not released, so this system is optional and `swan-bench check` does not cover it (its prompts carry PLOP's own answer-format suffix) |
 
 The translations are part of the benchmark, so no query author shapes a system's plan. Two checks keep them
 honest. A linter requires every AI call to have one fixed form built from a question and one context column;
 `ai_filter` spells out a claim layout (`Context: [<name>]: «<value>»`, then `Claim: <question> <name>`), from
 which the translators read the question and the column back. A **shadow model**, a deterministic stand-in for the LLM that answers the same
-(question, value) pair the same way whatever the system's prompt format, runs all three systems on every
+(question, value) pair the same way whatever the system's prompt format, runs SWAN-AISQL, BlendSQL and LOTUS on every
 question: their results must be identical.
 
 ## Data
@@ -76,7 +77,13 @@ value. It must return the gold answer, which shows the AISQL query is right when
   cannot know. The headline is the mean over questions. Exact match is reported as well.
 - **Calls, tokens, cost and latency** are counted the same way for every system by a local meter between
   the system and the model endpoint. Every system gets the same model and the same number of requests in
-  flight, and questions run one at a time.
+  flight, and questions run one at a time. Latency is the wall-clock time of a question from the system's
+  start to its last row (`seconds` in `queries.jsonl`, summed in `scores.json` and `swan-bench report`), so
+  it includes the model's response times. A latency figure comes from a fresh run or from a replay with
+  the proxy's latency replay on, which reproduces the recorded response times; the cleanest comparison
+  records the systems back to back in one session, as the published results were. A replay with latency
+  replay off measures the system's own work only (planning, data, dispatch), which is what the quick-start
+  runs through the cache show.
 - **Recording and replay.** Runs go through the SWAN-AISQL cache proxy, which records each answer with its
   cost and latency. Replaying a run costs nothing and reproduces its answers, cost and latency, so the
   systems can be compared side by side and rescored later.
@@ -96,6 +103,7 @@ value. It must return the gold answer, which shows the AISQL query is right when
 | `--budget` | `swan-bench run` | none | stop once the cache proxy has spent this many USD on new calls |
 | `--set NAME=VALUE` | `swan-bench run` | none | a SWAN-AISQL setting before each query (e.g. `ai_pullup=false`) |
 | `--duckdb-bin` | `swan-bench run`, `SWAN_AISQL_DUCKDB` | none | the SWAN-AISQL binary |
+| `--plop-bin` | `swan-bench run`, `SWAN_PLOP_BIN` | none | the Morrila (PLOP) fork's shell; `plop` also needs `--duckdb-bin` for the parquet export |
 | `SWAN_AISQL_DIR` | `scripts/run_*.sh` | `../SWAN-AISQL` | where the scripts find or clone SWAN-AISQL (binary, serving stack, embedding server) |
 | `--db`, `--qid` | `swan-bench run`, `check`, `lint` | all | restrict to databases or questions |
 | `--stub` | `swan-bench run` | off | answer with a local stub instead of a model, to test the setup for free |

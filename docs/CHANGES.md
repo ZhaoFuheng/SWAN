@@ -28,6 +28,14 @@ SWAN 2.0 measures how well a system plans its LLM calls, as well as its answers 
 - **Run scripts.** `scripts/run_{swan_aisql,blendsql,lotus}.sh` go from a fresh clone to results.
 - **Results refreshed (2026-10-02)** with SWAN-AISQL's `ai_filter` reasoning field and zero-shot BlendSQL:
   `results/gpt-5.6-luna/README.md`.
+- **Results are one back-to-back session with latency (2026-10-03).** All four systems ran the 120 questions
+  fresh, one after the other, through an empty recording cache, so `results/gpt-5.6-luna/` reports latency
+  (seconds per question, totals per database) next to quality, calls and cost, all from the same run; the
+  session is the published replay cache. The earlier separate runs (0.775 / 0.741 / 0.770 / 0.739 for
+  SWAN-AISQL / BlendSQL / LOTUS / PLOP) stay in its README as the noise reference.
+- **PLOP as a fourth system (2026-10-03).** `swan-bench run --system plop --plop-bin <Morrila duckdb>` translates
+  every query into PLOP's `semantic()` dialect (`translate_plop.py`) and runs it on the authors' fork over a
+  parquet export of the databases; calls, tokens and an estimated cost come from the fork's log.
 - **BlendSQL is zero-shot too (2026-10-02).** Its `LLMMap` prompt carries a built-in one-shot example ("Is this city
   in the California Bay Area? ... True"); the adapter strips it, so no system sees an example.
 - **Review of the 120 questions (2026-10-01).** Answers are now about entities, not rows: every query counts

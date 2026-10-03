@@ -1,5 +1,5 @@
 """The systems under test. Each runs the question's AISQL query on the MASKED database and returns rows:
-SWAN-AISQL as written, BlendSQL and LOTUS through their mechanical translations.
+SWAN-AISQL as written, BlendSQL, LOTUS and PLOP through their mechanical translations.
 
 A system is a class with a `name` (its directory under `runs/`), a constructor taking the model name, the
 OpenAI-compatible endpoint the runner hands it (the meter) and keyword options (`api_key`, `concurrency`,
@@ -7,7 +7,7 @@ and the system's own), and `execute(question, query) -> list[tuple]`. Optionally
 `last_usage() -> dict` (the system's own accounting of the query it just ran).
 """
 
-SYSTEMS = ("blendsql", "lotus", "aisql")
+SYSTEMS = ("blendsql", "lotus", "aisql", "plop")
 
 
 def load_system(name: str):
@@ -20,4 +20,7 @@ def load_system(name: str):
     if name == "aisql":
         from .aisql import AISQLSystem
         return AISQLSystem
+    if name == "plop":
+        from .plop import PLOPSystem
+        return PLOPSystem
     raise ValueError(f"unknown system {name!r}; expected one of {', '.join(SYSTEMS)}")

@@ -6,12 +6,15 @@ have been removed from the database. A system must recover the missing values wi
 with SQL.
 
 SWAN 2.0 also measures how well a system **plans** its LLM calls. Each question has one query in AISQL
-(DuckDB SQL with `ai_filter`, `ai_classify`, `ai_complete` and `ai_agg`), and three systems run it:
+(DuckDB SQL with `ai_filter`, `ai_classify`, `ai_complete` and `ai_agg`), and four systems run it:
 
 - **SWAN-AISQL**, DuckDB with the `aisql` extension, runs it as written.
 - **BlendSQL** ([parkervg/blendsql](https://github.com/parkervg/blendsql)) runs an automatic translation.
 - **LOTUS** ([lotus-data/lotus](https://github.com/lotus-data/lotus)) runs an automatic translation into a
   LOTUS program.
+- **PLOP** (Morrila, the plan-level optimizer of the PLOP paper; not yet released) runs an automatic
+  translation into its `semantic()` dialect. It needs the authors' DuckDB fork: `--plop-bin` (see
+  SWAN-AISQL's `sembench/PLOP_FORK.md` for the edits the fork needs to talk to the proxy).
 
 The questions give a planner choices (LIMITs, several AI filters, AI calls through joins, ...), and the
 databases repeat each entity about twice. docs/SWAN2_DESIGN.md explains the design and lists every knob.
@@ -32,7 +35,7 @@ scripts/run_lotus.sh      --qid superhero-05
 scripts/run_swan_aisql.sh                         # all 120 questions
 scripts/run_blendsql.sh
 scripts/run_lotus.sh
-uv run swan-bench report                          # the three systems side by side
+uv run swan-bench report                          # the systems side by side
 ```
 
 Each script does everything its system needs, and skips what is already done:
@@ -48,10 +51,11 @@ Each script does everything its system needs, and skips what is already done:
 
 Arguments go to `swan-bench run`: `--qid` and `--db` pick questions, `--stub` runs with a local stand-in
 instead of a model (free, no key, no servers; its answers are meaningless). Results go to
-`runs/<system>/<model>/`.
+`runs/<system>/<model>/`. PLOP has no script, since its fork is not public: with the fork built, run it as
+in step 5 below.
 
 **The cache proxy** records every answer with its cost and latency, and replays them when the same request
-comes again, so a rerun costs nothing and reports the same numbers. The recorded answers of all three
+comes again, so a rerun costs nothing and reports the same numbers. The recorded answers of all four
 systems on all 120 questions are published with SWAN-AISQL (its `serve/fetch_cache.sh` downloads them from
 Zenodo), so the results in this repository replay without a provider key. `SWAN_BENCH_ENDPOINT=http://localhost:4000`
 uses litellm alone, without recording. litellm is needed either way: it adapts each system's request to the
@@ -98,10 +102,10 @@ uv run swan-bench prepare
 ```bash
 uv run pytest                               # data, oracle answers, translations, scoring
 uv run swan-bench lint                      # every AISQL query is in the form the translators need
-uv run swan-bench check --db formula_1      # all three systems agree on a deterministic stand-in model
+uv run swan-bench check --db formula_1      # SWAN-AISQL, BlendSQL and LOTUS agree on a deterministic stand-in model
 ```
 
-`check` runs all three systems with a shadow model that answers each (question, value) pair the same way
+`check` runs SWAN-AISQL, BlendSQL and LOTUS with a shadow model that answers each (question, value) pair the same way
 whatever the system, so their results must be identical. It also prints each system's LLM calls per question.
 
 **4. Start the servers.** In `../SWAN-AISQL`, with its `.env` holding the key and its Python environment
@@ -117,6 +121,7 @@ serve/start_stack.sh          # litellm :4000, cache proxy :4001, embedding serv
 uv run swan-bench run --system aisql
 uv run swan-bench run --system blendsql
 uv run swan-bench run --system lotus
+uv run swan-bench run --system plop --plop-bin /path/to/morrila/duckdb --duckdb-bin "$SWAN_AISQL_DUCKDB"
 uv run swan-bench report
 ```
 
@@ -138,13 +143,22 @@ Each question gets a quality score from 0 to 1, following SemBench (`src/swan_be
 
 Rows match regardless of column order, floats to 10 significant digits, and URLs without their scheme,
 `www.`, percent-encoding and trailing slash. A query that fails scores 0.
+
+Besides quality and exact match, every run records per question the LLM calls, tokens, cost and **latency**
+(wall-clock seconds, model response times included). Latency is reported from fresh runs, or from replays
+with the proxy's latency replay on, which reproduce the recorded response times; a replay without it (the
+quick-start runs through the cache) times the system's own work only. The cleanest comparison records the
+systems back to back in one session, as the published results were.
 The headline is the mean quality; exact match is reported too. `swan-bench rescore` recomputes both from a
 run's stored answers.
 
 ## Results
 
-`results/gpt-5.6-luna/` holds the three systems' answers and scores on gpt-5.6-luna: mean quality 0.775 for
-SWAN-AISQL at 23,135 LLM calls, 0.741 for BlendSQL at 59,462 calls, and 0.770 for LOTUS at 69,478 calls.
+`results/gpt-5.6-luna/` holds the four systems' answers, scores and seconds from one back-to-back session
+on gpt-5.6-luna (2026-10-03): mean quality 0.757 for SWAN-AISQL at 22,398 LLM calls and 2,181 s over the 120
+questions, 0.773 for BlendSQL at 59,564 calls and 4,367 s, 0.751 for LOTUS at 69,211 calls and 4,190 s, and
+0.703 for PLOP at 25,645 calls and 10,264 s. Quality differences of 0.02–0.03 are within run-to-run noise
+(measured in that folder's README); calls, cost and latency are the separation.
 SWAN 1.x results are in `swan1/results/`.
 
 ## Data
@@ -175,10 +189,10 @@ Adding or editing a question: docs/SWAN2_AUTHORING.md.
 ```
 scripts/                 run_swan_aisql.sh, run_blendsql.sh, run_lotus.sh
 src/swan_bench/          the benchmark: database build, AISQL language, translators, meter, runner, scoring
-src/swan_bench/systems/  one adapter per system (SWAN-AISQL, BlendSQL, LOTUS)
+src/swan_bench/systems/  one adapter per system (SWAN-AISQL, BlendSQL, LOTUS, PLOP)
 queries/                 the AISQL and oracle queries
 swan1/                   SWAN 1.x: its questions, per-system queries, results and the 2024 migration scripts
-results/gpt-5.6-luna/    SWAN 2.0 answers and scores for the three systems
+results/gpt-5.6-luna/    SWAN 2.0 answers and scores for the four systems
 results/blendsql_2024/   the 2024 BlendSQL logs (5-shot logs in Git LFS)
 docs/                    SWAN2_DESIGN.md, SWAN2_AUTHORING.md, CHANGES.md
 ```

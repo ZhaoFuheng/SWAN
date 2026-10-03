@@ -48,6 +48,8 @@ def _cmd_run(args) -> None:
     if args.system == "aisql":
         settings = {"ai_concurrency": args.concurrency, **dict(s.split("=", 1) for s in args.set or [])}
         options.update(duckdb_bin=args.duckdb_bin, mock=args.stub, settings=settings)
+    if args.system == "plop":
+        options.update(plop_bin=args.plop_bin, duckdb_bin=args.duckdb_bin)
     endpoint = None if args.stub else args.endpoint
     tag = args.tag or (f"{args.model.replace('/', '_')}" + ("_stub" if args.stub else ""))
     run(args.system, args.model, endpoint, databases=args.db or paths.DATABASES, qids=set(args.qid or []),
@@ -151,6 +153,8 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--duckdb-bin", default=os.environ.get("SWAN_AISQL_DUCKDB"),
                    help="aisql: the SWAN-AISQL duckdb binary (default $SWAN_AISQL_DUCKDB)")
     p.add_argument("--set", action="append", metavar="NAME=VALUE", help="aisql: an extra SET before each query")
+    p.add_argument("--plop-bin", default=os.environ.get("SWAN_PLOP_BIN"),
+                   help="plop: the Morrila fork's duckdb shell (default $SWAN_PLOP_BIN); needs --duckdb-bin for the parquet export")
     p.set_defaults(func=_cmd_run)
 
     p = sub.add_parser("lint", help="check that every AISQL query is in the SWAN 2.0 prompt form")
