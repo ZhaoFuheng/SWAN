@@ -25,9 +25,8 @@ with its answers, cost and latency and without a provider key.
 Latency is the wall-clock time of a question from the system's start to its last row, model response times
 included (`seconds` per question in `answers.jsonl`, summed per database in `scores.json`). BlendSQL's total
 includes one question (european_football_2-22) that took 1,910 s at 27,258 calls; without it its total is
-2,457 s. PLOP's time is dominated by the shapes it evaluates row by row, one call at a time. PLOP's cost is an
-estimate from its token counts (its requests carry no provider cost header); one question (formula_1-02, an
-AI filter inside an `IN` subquery) fails in its optimizer and scores 0. Quality and exact match are defined in
+2,457 s. PLOP's cost is an estimate from its token counts (its requests carry no provider cost header); one
+question (formula_1-02, an AI filter inside an `IN` subquery) fails in its optimizer and scores 0. Quality and exact match are defined in
 the repository README. Per system, `answers.jsonl` holds each question's answer, calls, tokens, cost and
 seconds, and `scores.json` the totals per database.
 
